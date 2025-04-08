@@ -1,6 +1,7 @@
-import torch
-import numpy as np
 from typing import Optional
+
+import numpy as np
+import torch
 
 from scvi.nn import one_hot
 
@@ -89,7 +90,10 @@ def compute_ground_truth_proportions(y_pseudobulk, n_labels, n_cells_per_pseudob
         if len(counts) < n_labels:
             # then not all labels are present in pseudobulk, but we need to specify these proportions of 0
             unique_indices = unique_indices.int().tolist()
-            counts =  [counts[unique_indices.index(j)].item() if j in unique_indices else 0 for j in range(n_labels)]
+            counts = [
+                counts[unique_indices.index(j)].item() if j in unique_indices else 0
+                for j in range(n_labels)
+            ]
             counts = torch.tensor(counts).to(device="cuda")
         proportions = counts.float() / n_cells_per_pseudobulk
         all_proportions.append(proportions)
@@ -104,7 +108,7 @@ def compute_signature(y, x_):
         idx = (y == cell_type).flatten()
         x_signature_mask.append(idx.tolist())
     x_signature_mask = torch.Tensor(x_signature_mask).to(device="cuda")
-    x_signature_ = torch.matmul(x_signature_mask, x_)/counts.unsqueeze(-1)
+    x_signature_ = torch.matmul(x_signature_mask, x_) / counts.unsqueeze(-1)
     return counts, x_signature_mask, x_signature_
 
 
@@ -112,10 +116,14 @@ def get_mean_pearsonr_torch(x, y):
     """
     Mimics `scipy.stats.pearsonr`
     Rewritten to adapt to 2D tensors, to compute the mean of the 1D correlations along the first axis.
-    Arguments
-    ---------
+
+    Parameters
+    ----------
     x : 2D torch.Tensor
+        The first tensor
     y : 2D torch.Tensor
+        The second tensor
+
     Returns
     -------
     r_val : float
@@ -137,7 +145,7 @@ def get_mean_pearsonr_torch(x, y):
     mean_y = torch.mean(y, axis=1).unsqueeze(dim=1)
     xm = x.sub(mean_x)
     ym = y.sub(mean_y)
-    r_num = (xm*ym).sum(dim=1)
+    r_num = (xm * ym).sum(dim=1)
     r_den = torch.norm(xm, p=2, dim=1) * torch.norm(ym, p=2, dim=1)
     r_val = r_num / r_den
     return torch.mean(r_val)

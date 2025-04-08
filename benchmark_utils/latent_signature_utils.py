@@ -1,13 +1,15 @@
 """Utilities to create latent signatures from scvi-like (deep generative) models."""
+import random
 from typing import Optional, Union
-import scvi
+
 import anndata as ad
 import numpy as np
 import pandas as pd
-import random
 import torch
 
+import scvi
 from constants import SIGNATURE_TYPE
+
 from .pseudobulk_dataset_utils import create_anndata_pseudobulk
 
 
@@ -23,7 +25,6 @@ def create_latent_signature(
     model: Optional[Union[scvi.model.SCVI, scvi.model.MixUpVI]] = None,
 ) -> ad.AnnData:
     """Make cell type representations from a single cell dataset represented with scvi.
-
 
     From an annotated single cell dataset (adata), for each cell type, (found in the
     cell_type column of obs in adata), we create "repeats" representation in the
@@ -57,10 +58,10 @@ def create_latent_signature(
         If True, then average all cells per given cell type. sc_per_pseudobulk will
         not be used.
     sc_per_pseudobulk: int
-        The number of single cells used to construct the purified pseudobulks. 
+        The number of single cells used to construct the purified pseudobulks.
         Won't be used if average_all_cells = True.
     repeats: int
-        The number of representations computed randomly for a given cell type. If 
+        The number of representations computed randomly for a given cell type. If
         average_all_cells is True, all repeats will be the same.
     aggregate_before_embedding: bool
         Perform the aggregation (average) before embedding the cell-type specific
@@ -94,28 +95,27 @@ def create_latent_signature(
                     adata_sampled = adata[sampled_cells.index]
                 else:
                     seed = random.seed()
-                    sampled_cells = (
-                    sampled_cells
-                    .sample(n=sc_per_pseudobulk, random_state=seed, replace=True)
-                    .index
-                    )
+                    sampled_cells = sampled_cells.sample(
+                        n=sc_per_pseudobulk, random_state=seed, replace=True
+                    ).index
                     adata_sampled = adata[sampled_cells]
 
-                assert (
-                    model is not None,
-                    "If representing a purified pseudo bulk (aggregate before embedding",
-                    "), must give a model",
+                assert model is not None, (
+                    "If representing a purified pseudo bulk (aggregate before embedding), "
+                    "must give a model"
                 )
                 assert (
                     count_key is not None
                 ), "Must give a count key if aggregating before embedding."
-                
+
                 if use_mixupvi:
                     # TODO: in this case, n_cells sampled will be equal to self.n_cells_per_pseudobulk by mixupvae
                     # so change that to being equal to either all cells (if average_all_cells) or sc_per_pseudobulk
                     result = model.get_latent_representation(
                         adata_sampled, get_pseudobulk=True
-                    )[0] # take first pseudobulk
+                    )[
+                        0
+                    ]  # take first pseudobulk
                 else:
                     if SIGNATURE_TYPE == "pre_encoded":
                         pseudobulk = (
@@ -137,6 +137,5 @@ def create_latent_signature(
     full_rpz = np.stack(representation_list, axis=0)
     obs = pd.DataFrame(pd.Series(cell_type_list, name="cell type"))
     obs["repeat"] = repeat_list
-    adata_signature = ad.AnnData(X=full_rpz,
-                                 obs=obs)
+    adata_signature = ad.AnnData(X=full_rpz, obs=obs)
     return adata_signature

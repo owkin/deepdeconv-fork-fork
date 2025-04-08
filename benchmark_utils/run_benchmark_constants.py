@@ -2,6 +2,7 @@
 
 import importlib
 
+
 def initialize_func(func_config: dict):
     """Initialize a function from a dict config.
 
@@ -24,14 +25,14 @@ def initialize_func(func_config: dict):
 CORRELATION_FUNCTIONS = {
     "sample_wise_correlation": {
         "_target_": "benchmark_utils.compute_correlations",
-        "deconv_results": None, 
+        "deconv_results": None,
         "ground_truth_fractions": None,
     },
     "cell_type_wise_correlation": {
         "_target_": "benchmark_utils.compute_group_correlations",
-        "deconv_results": None, 
+        "deconv_results": None,
         "ground_truth_fractions": None,
-    }, 
+    },
 }
 
 DATASETS = {
@@ -84,7 +85,7 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.ScadenMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
-    }
+    },
 }
 
 EVALUATION_PSEUDOBULK_SAMPLINGS = {
@@ -111,7 +112,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "cell_type_group": "cell_types_grouped",
         "is_n_cells_random": False,
         "add_sparsity": False,
-    }
+    },
 }
 
 
@@ -124,14 +125,16 @@ SINGLE_CELL_DATASETS = {"TOY", "CTI"}
 MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI"}
 SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden"}
 SINGLE_CELL_GRANULARITIES = {
-    "1st_level_granularity", 
-    "2nd_level_granularity", 
-    "3rd_level_granularity", 
+    "1st_level_granularity",
+    "2nd_level_granularity",
+    "3rd_level_granularity",
     "4th_level_granularity",
 }
-GRANULARITIES = SINGLE_CELL_GRANULARITIES.union({
-    "FACS_1st_level_granularity",
-})
+GRANULARITIES = SINGLE_CELL_GRANULARITIES.union(
+    {
+        "FACS_1st_level_granularity",
+    }
+)
 SIGNATURE_TO_GRANULARITY = {
     "laughney": "1st_level_granularity",
     "CTI_1st_level_granularity": "1st_level_granularity",
