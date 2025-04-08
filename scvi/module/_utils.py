@@ -113,8 +113,8 @@ def compute_signature(y, x_):
 
 
 def get_mean_pearsonr_torch(x, y):
-    """
-    Mimics `scipy.stats.pearsonr`
+    """Mimics `scipy.stats.pearsonr`.
+
     Rewritten to adapt to 2D tensors, to compute the mean of the 1D correlations along the first axis.
 
     Parameters

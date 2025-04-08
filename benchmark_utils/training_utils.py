@@ -4,9 +4,9 @@ import os
 from typing import List, Tuple
 
 import anndata as ad
-import ray
 from loguru import logger
 
+import ray
 import scvi
 from constants import (
     BATCH_SIZE,

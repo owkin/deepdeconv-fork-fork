@@ -130,3 +130,5 @@ poetry.lock
 *.pt
 *.h5ad
 notebooks/ulysse_explo.ipynb
+/ray
+.vscode/launch.json

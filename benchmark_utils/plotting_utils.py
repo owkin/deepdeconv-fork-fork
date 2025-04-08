@@ -131,20 +131,7 @@ def plot_deconv_results(correlations, save=False, save_path="", filename=""):
 def plot_deconv_results_group(
     correlations_group, save=False, save_path="", filename=""
 ):
-    """Plot the deconv correlation results from sanity checks 2 and 3.
-    per cell type.
-
-    Parameters
-    ----------
-    correlations_group : DataFrame
-        The deconvolution results to evaluate
-    save : bool
-        Whether to save the plot
-    save_path : str
-        The path to save the plot
-    filename : str
-        The filename to save the plot
-    """
+    """Plot the deconv correlation results from sanity checks 2 and 3 per cell type."""
     if filename == "":
         granularity = correlations_group["granularity"].unique()[0]
         if "sampling_method" in correlations_group.columns and isinstance(
@@ -175,20 +162,7 @@ def plot_deconv_results_group(
 def plot_deconv_lineplot(
     results: Dict[int, pd.DataFrame], save=False, save_path="", filename=""
 ):
-    """Plot the deconv correlation results from sanity checks 2 and 3.
-    per number of cells.
-
-    Parameters
-    ----------
-    results : Dict[int, pd.DataFrame]
-        The deconvolution results to evaluate
-    save : bool
-        Whether to save the plot
-    save_path : str
-        The path to save the plot
-    filename : str
-        The filename to save the plot
-    """
+    """Plot the deconv correlation results from sanity checks 2 and 3 per number of cells."""
     if filename == "":
         granularity = results["granularity"].unique()[0]
         sampling_method = results["sampling_method"].unique()[0]

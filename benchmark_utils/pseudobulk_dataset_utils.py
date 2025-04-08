@@ -103,9 +103,10 @@ def create_purified_pseudobulk_dataset(
     aggregation_method: str = "mean",
 ):
     """Create pseudobulk dataset from single-cell RNA data, purified by cell types.
+
     There will thus be as many deconvolutions as there are cell types, each one of them
     only asked to infer that there is only one cell type in the pseudobulk it is trying
-    to deconvolve. This task is thus supposed to be very easy.
+    to deconvolve. This task is supposed to be very easy.
 
     Parameters
     ----------
@@ -166,6 +167,7 @@ def create_uniform_pseudobulk_dataset(
     aggregation_method: str = "mean",
 ):
     """Create pseudobulk dataset from single-cell RNA data, randomly sampled.
+
     This deconvolution task is not too hard because the pseudo-bulk have the same cell
     fractions than the training dataset on which was created the signature matrix. Plus,
     when using a high n_cells (e.g. the default 2000) to create the pseudo-bulks, all
@@ -246,8 +248,9 @@ def create_dirichlet_pseudobulk_dataset(
     is_n_cells_random: bool = False,
     add_sparsity: bool = False,
 ):
-    """Create pseudobulk dataset from single-cell RNA data, sampled from a dirichlet
-    distribution. If a prior belief on the cell fractions (e.g. prior knowledge from
+    """Create pseudobulk dataset from single-cell RNA data, sampled from a dirichlet distribution.
+
+    If a prior belief on the cell fractions (e.g. prior knowledge from
     specific tissue), then it can be incorporated. Otherwise, it will just be a non-
     informative prior. Then, compute dirichlet posteriors to sample cells - dirichlet is
     conjugate to the multinomial distribution, thus giving an easy posterior

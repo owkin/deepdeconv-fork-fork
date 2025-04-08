@@ -75,7 +75,8 @@ def read_txt_r_signature(path):
 
 
 def map_hgnc_to_one_ensg(gene_names, adata):
-    """
+    """Map a HGNC symbol to a single ENSG symbol.
+
     If a HGNC symbol map to multiple ENSG symbols, choose the one that is in the
     single cell dataset.
     If the HGNC symbol maps to multiple ENSG symbols even inside the scRNAseq dataset,
@@ -96,7 +97,8 @@ def map_hgnc_to_one_ensg(gene_names, adata):
 
 
 def map_hgnc_to_ensg(genes, adata):
-    """
+    """Map the HGNC symbols to ENSG symbols.
+
     Map the HGNC symbols from the signature matrix to the corresponding ENSG symbols
     of the scRNAseq dataset.
 

@@ -84,7 +84,9 @@ def compute_benchmark_correlations(
 
 
 def compute_correlations(deconv_results, ground_truth_fractions):
-    """Compute n_sample pairwise correlations between the deconvolution results and the
+    """Compute pairwise correlations between deconvolution results and ground truth.
+
+    Computes n_sample correlations between the deconvolution results and the
     ground truth fractions of the n_groups (here n cell types).
 
     Parameters
@@ -109,7 +111,9 @@ def compute_correlations(deconv_results, ground_truth_fractions):
 
 
 def compute_group_correlations(deconv_results, ground_truth_fractions):
-    """Compute n_groups (here n cell types) pairwise correlations between the
+    """Compute cell type correlations between deconvolution results and ground truth.
+
+    Computes n_groups (here n cell types) pairwise correlations between the
     deconvolution results and ground truth fractions of the n_samples.
 
     Parameters

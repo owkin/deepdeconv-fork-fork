@@ -1,7 +1,5 @@
 """Hyperparameter search configs."""
 
-from ray import tune
-
 from constants import (
     BATCH_SIZE,
     DISPERSION,
@@ -18,6 +16,7 @@ from constants import (
     TRAIN_SIZE,
     USE_BATCH_NORM,
 )
+from ray import tune
 
 ### search space to define: the only thing to change
 

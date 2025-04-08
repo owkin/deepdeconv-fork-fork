@@ -113,6 +113,7 @@ def add_cell_types_grouped(
     adata: ad.AnnData, group: str = "1st_level_granularity"
 ) -> ad.AnnData:
     """Add the cell types grouped columns in Anndata according to the grouping choice.
+
     It uses and returns the train_test_index csv file created for the signature matrix.
 
     Parameters
