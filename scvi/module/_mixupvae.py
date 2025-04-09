@@ -516,7 +516,15 @@ class MixUpVAE(VAE):
             )
 
         if transform_batch is not None:
-            batch_index = torch.ones_like(batch_index) * transform_batch
+            # This means that we are transforming the batch index to be the one specified by transform_batch for all the cells and pseudobulks
+            # Create a new one-hot encoded batch index for the transformed batch
+            one_hot_batch_index = torch.zeros_like(one_hot_batch_index)
+            one_hot_batch_index[:, transform_batch] = 1
+            # Also transform the pseudobulk batch indices
+            one_hot_batch_index_pseudobulk = torch.zeros_like(
+                one_hot_batch_index_pseudobulk
+            )
+            one_hot_batch_index_pseudobulk[:, transform_batch] = 1
 
         size_factor_pseudobulk = None
         if not self.use_size_factor_key:
@@ -554,8 +562,8 @@ class MixUpVAE(VAE):
                 one_hot_y_pseudobulk, self.px_r
             )  # should we really create self.px_pseudobulk_r ?
         elif self.dispersion == "gene-batch":
-            px_r = F.linear(one_hot(batch_index, self.n_batch), self.px_r)
-            px_pseudobulk_r = F.linear(one_hot(batch_index, self.n_batch), self.px_r)
+            px_r = F.linear(one_hot_batch_index, self.px_r)
+            px_pseudobulk_r = F.linear(one_hot_batch_index_pseudobulk, self.px_r)
         elif self.dispersion == "gene":
             px_r = self.px_r
             px_pseudobulk_r = self.px_r
@@ -587,14 +595,19 @@ class MixUpVAE(VAE):
                 "not make sense for the nature of pseudobulk."
             )
         else:
-            (
-                local_library_log_means,
-                local_library_log_vars,
-            ) = self._compute_local_library_params(batch_index)
-            (
-                local_library_log_means_pseudobulk,
-                local_library_log_vars_pseudobulk,
-            ) = self._compute_local_library_params(batch_index[0].unsqueeze(0))
+            # Changed this one to use the one-hot encoded batch index compared to the original implementation
+            local_library_log_means = F.linear(
+                one_hot_batch_index, self.library_log_means
+            )
+            local_library_log_vars = F.linear(
+                one_hot_batch_index, self.library_log_vars
+            )
+            local_library_log_means_pseudobulk = F.linear(
+                one_hot_batch_index_pseudobulk, self.library_log_means
+            )
+            local_library_log_vars_pseudobulk = F.linear(
+                one_hot_batch_index_pseudobulk, self.library_log_vars
+            )
             pl = Normal(local_library_log_means, local_library_log_vars.sqrt())
             pl_pseudobulk = Normal(
                 local_library_log_means_pseudobulk,
