@@ -3,7 +3,7 @@
 ## Constants for run_mixupvi.py
 TUNE_MIXUPVI = False
 TRAINING_DATASET = "CTI"  # ["CTI", "TOY", "CTI_PROCESSED", "CTI_RAW"]
-TRAINING_CELL_TYPE_GROUP = "2nd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
+TRAINING_CELL_TYPE_GROUP = "3rd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
 N_GENES = 4000  # number of input genes after preprocessing (NOT USED INSIDE BENCHMARK)
 
 ## Constants for both run_mixupvi.py and run_benchmark.py
