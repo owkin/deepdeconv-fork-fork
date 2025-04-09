@@ -48,6 +48,8 @@ if TRAINING_DATASET == "TOY":
 elif TRAINING_DATASET == "CTI":
     adata = sc.read("/home/owkin/project/cti/cti_adata.h5ad")
     preprocess_scrna(adata, keep_genes=N_GENES, batch_key="donor_id")
+    # TODO: check if this is correct also for the other datasets
+    cell_type = f"cell_types_grouped_{TRAINING_CELL_TYPE_GROUP}"
 elif TRAINING_DATASET == "CTI_RAW":
     warnings.warn(
         "The raw data of this adata is on adata.raw.X, but the normalised "
