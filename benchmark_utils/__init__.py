@@ -11,6 +11,11 @@ from .deconv_methods import (
     DestVIMethod,
     TAPEMethod,
     ScadenMethod,
+    OLSMethod,
+    DWLSMethod,
+    RLRMethod,
+    NuSVRMethod,
+    WNNLSMethod,    
 )
 from .deconv_utils import (
     initialize_deconv_methods,
