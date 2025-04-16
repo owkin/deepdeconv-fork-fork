@@ -60,6 +60,31 @@ DECONV_METHODS = {
         "signature_matrix_name": "",
         "signature_matrix": None,
     },
+    "DWLS": {
+        "_target_": "benchmark_utils.DWLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+    },
+    "OLS": {
+        "_target_": "benchmark_utils.OLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+    },
+    "RLR": {
+        "_target_": "benchmark_utils.RLRMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+    },
+    "NuSVR": {
+        "_target_": "benchmark_utils.NuSVRMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+    },
+    "WNNLS": {
+        "_target_": "benchmark_utils.WNNLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+    },
     "scVI": {
         "_target_": "benchmark_utils.scVIMethod",
         "adata_train": None,
@@ -122,7 +147,7 @@ N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
 TRAIN_DATASETS = {"CTI"}
 SINGLE_CELL_DATASETS = {"TOY", "CTI"}
 MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI"}
-SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden"}
+SIGNATURE_MATRIX_MODELS = {"NNLS", "OLS", "DWLS", "RLR", "NuSVR", "WNNLS", "TAPE", "Scaden"}
 SINGLE_CELL_GRANULARITIES = {
     "1st_level_granularity", 
     "2nd_level_granularity", 
@@ -158,6 +183,11 @@ GRANULARITY_TO_EVALUATION_DATASET = {
 }
 DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
     "NNLS": "adata_pseudobulk_test_rc",
+    "OLS": "adata_pseudobulk_test_rc",
+    "DWLS": "adata_pseudobulk_test_rc",
+    "RLR": "adata_pseudobulk_test_rc",
+    "NuSVR": "adata_pseudobulk_test_rc",
+    "WNNLS": "adata_pseudobulk_test_rc",
     "TAPE": "adata_pseudobulk_test_rc",
     "Scaden": "adata_pseudobulk_test_rc",
     "MixUpVI": "adata_pseudobulk_test_counts",

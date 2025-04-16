@@ -15,14 +15,14 @@ MAX_EPOCHS = 100
 SAVE_MODEL = False
 SEED = 3
 # MixUpVI training hyperparameters
-BATCH_SIZE = 1024
-TRAIN_SIZE = 0.7 # as opposed to validation
+BATCH_SIZE = 2048
+TRAIN_SIZE = 0.9 # as opposed to validation
 CHECK_VAL_EVERY_N_EPOCH = None
 if TRAIN_SIZE < 1:
     CHECK_VAL_EVERY_N_EPOCH = 1
 # MixUpVI model hyperparameters
 N_PSEUDOBULKS = 100
-N_CELLS_PER_PSEUDOBULK = 256 # None (then will be batch size) or int (will cap at batch size)
+N_CELLS_PER_PSEUDOBULK = 512 # None (then will be batch size) or int (will cap at batch size)
 N_HIDDEN = 512
 CONT_COV = None  # None or list of continuous covariates to include
 CAT_COV = None # None or ["donor_id", "assay"]
