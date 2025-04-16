@@ -1,13 +1,13 @@
 ## A test config to run the benchmark
 
-deconv_methods: ["NNLS", "MixUpVI"] # "TAPE", "Scaden", "scVI", "DestVI"
-evaluation_datasets: ["CTI", "BULK_FACS"]
-granularities: ["2nd_level_granularity", "FACS_1st_level_granularity"]
+deconv_methods: ["NNLS", "DWLS", "OLS", "RLR", "NuSVR", "WNNLS"] #, "MixUpVI", "TAPE", "Scaden"] # "scVI", "DestVI"
+evaluation_datasets: ["CTI"] #, "BULK_FACS"]
+granularities: ["2nd_level_granularity"] #, "2nd_level_granularity"] #, "FACS_1st_level_granularity"]
 evaluation_pseudobulk_samplings: ["DIRICHLET"] # "UNIFORM", "PURIFIED"
-n_samples_evaluation_pseudobulk: 500
-n_cells_per_evaluation_pseudobulk: [100, 500]
-signature_matrices: ["CTI_2nd_level_granularity", "FACS_1st_level_granularity"]
+n_samples_evaluation_pseudobulk: 10
+n_cells_per_evaluation_pseudobulk: [200] #[50, 100, 150, 200, 300, 400, 500] #, 600, 700, 800, 900, 1000]
+signature_matrices: ["CTI_2nd_level_granularity"] # "FACS_1st _level_granularity"]
 train_dataset: "CTI"
-n_variable_genes: 3000
-experiment_name: "test_benchmark" # if None, a random name will be chosen
+n_variable_genes: 2000
+experiment_name: "preprint_experiments_baselines" # if None, a random name will be chosen
 save: True # if False, only the plots will be saved
