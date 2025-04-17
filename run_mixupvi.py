@@ -1,5 +1,5 @@
-import os
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
+# import os
+# os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
 
 """Run MixUpVI experiments with the right sanity checks."""
 
@@ -51,7 +51,6 @@ if TRAINING_DATASET == "TOY":
 elif TRAINING_DATASET == "CTI":
     adata = sc.read("/home/owkin/project/cti/cti_adata.h5ad")
     preprocess_scrna(adata, keep_genes=N_GENES, batch_key="donor_id")
-    # TODO: check if this is correct also for the other datasets
     cell_type = f"cell_types_grouped_{TRAINING_CELL_TYPE_GROUP}"
 elif TRAINING_DATASET == "CTI_RAW":
     warnings.warn(
@@ -78,6 +77,8 @@ if TRAINING_DATASET != "TOY":
     adata_train = adata[train_test_index["Train index"]]
     adata_test = adata[train_test_index["Test index"]]
 
+filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+adata_train = adata_train[:, filtered_genes]
 
 # %% Fit MixUpVI with hyperparameters defined in constants.py
 adata_train = adata_train.copy()
