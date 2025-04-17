@@ -11,6 +11,9 @@ from TAPE import Deconvolution
 from TAPE.deconvolution import ScadenDeconvolution
 from pydeconv import SignatureMatrix
 from pydeconv.model import OLS, NNLS, DWLS, RLR, NuSVR, WNNLS
+import torch
+import torch.serialization
+import functools
 
 from benchmark_utils.latent_signature_utils import create_latent_signature
 from benchmark_utils.deconv_utils import use_nnls_method
@@ -20,6 +23,18 @@ from benchmark_utils.training_utils import (
     fit_scvi,
     fit_mixupvi,
 )
+
+def _patch_torch_load():
+    """Patch torch.load to use weights_only=False by default for TAPE compatibility"""
+    original_load = torch.load
+    @functools.wraps(original_load)
+    def patched_load(*args, **kwargs):
+        if 'weights_only' not in kwargs:
+            kwargs['weights_only'] = False
+        return original_load(*args, **kwargs)
+    torch.load = patched_load
+
+_patch_torch_load()
 
 class AbstractDeconvolutionMethod:
     """Abstract Deconvolution Method that every deconvolution method has to inherent from.

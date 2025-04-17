@@ -128,18 +128,25 @@ def run_benchmark(
         save_deconvolution_results(all_data["deconv_results"], experiment_path=experiment_name)
         logger.debug("Saved deconvolution results and ground truths.")
 
-    # Compute basic correlations
-    logger.info("Computing correlations.")
+    # Compute basic correlations and error metrics
+    logger.info("Computing correlations and error metrics.")
     df_samples_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="sample_wise_correlation")
     df_cell_type_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="cell_type_wise_correlation")
-    df_all_correlations = pd.concat([df_samples_correlation, df_cell_type_correlation], ignore_index=True)
+    df_mse = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="mse")
+    df_mae = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="mae")
+    df_all_metrics = pd.concat([
+        df_samples_correlation, 
+        df_cell_type_correlation,
+        df_mse,
+        df_mae
+    ], ignore_index=True)
     if save:
-        df_all_correlations.to_csv(experiment_name + "/df_all_correlations.csv")
-        logger.debug(f"Saved correlation results in {experiment_name}/df_all_correlations.csv")
-    logger.info("Correlations computed.")
+        df_all_metrics.to_csv(experiment_name + "/df_all_metrics.csv")
+        logger.debug(f"Saved correlation and error metric results in {experiment_name}/df_all_metrics.csv")
+    logger.info("Correlations and error metrics computed.")
 
     # Basic plotting
-    plot_benchmark_correlations(df_all_correlations, save_path=experiment_name)
+    plot_benchmark_correlations(df_all_metrics, save_path=experiment_name)
     logger.debug(f"Saved plots.")
 
     open(f"{experiment_name}/experiment_over.txt", "w").close() # Finish experiment
@@ -147,12 +154,13 @@ def run_benchmark(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config", type=str, required=True, help="Path to the YAML configuration file"
-    )
-    args = parser.parse_args()
-    print(args.config)
-    config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
-
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument(
+    #     "--config", type=str, required=True, help="Path to the YAML configuration file"
+    # )
+    # args = parser.parse_args()
+    # print(args.config)
+    config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml")
+    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
+    
     run_benchmark(**config_dict)

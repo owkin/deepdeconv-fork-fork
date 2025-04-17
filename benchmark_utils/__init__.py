@@ -3,6 +3,8 @@ from .correlation_utils import (
     compute_benchmark_correlations,
     compute_correlations,
     compute_group_correlations,
+    compute_mse,
+    compute_mae,
 )
 from .deconv_methods import (
     NNLSMethod,
@@ -42,6 +44,8 @@ from .plotting_utils import (
     plot_kl_loss,
     plot_pearson_random,
     compare_tuning_results,
+    plot_error_metric,
+    plot_mse_mae_deconv,
 )
 from .process_dataset_utils import (
     preprocess_scrna,

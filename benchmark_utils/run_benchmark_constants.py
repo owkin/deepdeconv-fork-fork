@@ -32,6 +32,16 @@ CORRELATION_FUNCTIONS = {
         "deconv_results": None, 
         "ground_truth_fractions": None,
     }, 
+    "mse": {
+        "_target_": "benchmark_utils.compute_mse",
+        "deconv_results": None, 
+        "ground_truth_fractions": None,
+    },
+    "mae": {   
+        "_target_": "benchmark_utils.compute_mae",
+        "deconv_results": None, 
+        "ground_truth_fractions": None,
+    }       
 }
 
 DATASETS = {

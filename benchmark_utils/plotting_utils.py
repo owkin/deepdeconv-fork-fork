@@ -10,7 +10,7 @@ from loguru import logger
 
 
 def plot_benchmark_correlations(df_all_correlations, save_path: str = "", save: bool = True):
-    """General function to plot benchmark correlations, and save them by default."""
+    """General function to plot benchmark correlations and error metrics, and save them by default."""
     def _get_groups(df, groupby_col):
         """Returns grouped DataFrames if groupby_col exists and is not empty, else returns a list with the original df."""
         if groupby_col in df.columns and df[groupby_col].notna().any():
@@ -19,7 +19,9 @@ def plot_benchmark_correlations(df_all_correlations, save_path: str = "", save: 
     
     plot_func_map = {
         "sample_wise_correlation": plot_deconv_results,
-        "cell_type_wise_correlation": plot_deconv_results_group
+        "cell_type_wise_correlation": plot_deconv_results_group,
+        "mse": lambda df, **kwargs: plot_error_metric(df, "mse", **kwargs),
+        "mae": lambda df, **kwargs: plot_error_metric(df, "mae", **kwargs)
     }
 
     for granularity in df_all_correlations.granularity.unique():
@@ -303,3 +305,51 @@ def compare_tuning_results(
     sns.set_theme(style="darkgrid")
     sns.lineplot(x="epoch", y=variable_to_plot, hue=variable_tuned, ci="sd", data=all_results, err_style="bars", palette=custom_palette)
     plt.show()
+
+def plot_error_metric(correlations, metric_name, save=False, save_path="", filename=""):
+    """Plot error metrics (MSE or MAE) boxplots."""
+    if filename == "":
+        granularity = correlations["granularity"].unique()[0]
+        if "sampling_method" in correlations.columns and isinstance(correlations["sampling_method"].unique()[0],str):
+            sampling_method = correlations["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_{metric_name}_boxplot"
+        else:
+            filename = f"{granularity}_{metric_name}_boxplot"
+
+    correlations = correlations[[metric_name, "deconv_method"]]
+    plt.clf()
+    sns.set_style("whitegrid")
+    # Boxplot
+    plt.figure(figsize=(10, 6))
+    boxplot = sns.boxplot(correlations, x="deconv_method", y=metric_name, hue="deconv_method")
+    plt.xticks(rotation=90)
+    
+    # Plot the medians
+    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    medians = (
+        correlations.groupby("deconv_method")[metric_name]
+        .median()
+        .reindex(x_categories)
+        .round(4)
+    )
+    y_range = correlations[metric_name].max() - correlations[metric_name].min()
+    vertical_offset = y_range * 0.0005
+    y_position = medians + vertical_offset
+    
+    for xtick, method in enumerate(x_categories):
+        median_value = medians.loc[method]
+        if np.isfinite(median_value):
+            boxplot.text(
+                xtick,
+                y_position.loc[method],
+                f"{median_value:.4f}",
+                size="x-small",
+                color="black",
+                ha="center",
+                weight="semibold",
+            )
+    
+    plt.title(f"{metric_name.upper()} by Deconvolution Method")
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300, bbox_inches='tight')
+        plt.close()
