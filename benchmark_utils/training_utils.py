@@ -81,7 +81,7 @@ def tune_mixupvi(
         search_space=search_space,
         num_samples=num_samples,  # will randomly num_samples samples (with replacement) among the HP cominations specified
         max_epochs=MAX_EPOCHS,
-        resources={"cpu": 6, "gpu": 1},
+        resources={"cpu": 6, "gpu": 0.5},
     )
 
     all_results, best_hp, tuning_path, search_path = format_and_save_tuning_results(

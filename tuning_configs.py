@@ -38,7 +38,7 @@ example_with_several_seeds = {
 latent_space_search_space = {
     "n_latent": tune.grid_search(
         # list(range(len(GROUPS[TRAINING_CELL_TYPE_GROUP]) - 1, 550, 20)) # from n cell types to n marker genes
-        [70, 100, 120, 150]
+        [30, 70, 100, 120, 150]
     ),
     "seed": tune.grid_search([3, 8, 12, 23, 42]),
 }
