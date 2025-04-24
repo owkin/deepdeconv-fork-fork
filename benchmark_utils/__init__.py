@@ -20,6 +20,7 @@ from .deconv_utils import (
 from .latent_signature_utils import create_latent_signature
 from .load_dataset_utils import (
     load_bulk_facs,
+    load_bulk_facs_tpm,
     load_cti,
     load_preprocessed_datasets,
 )

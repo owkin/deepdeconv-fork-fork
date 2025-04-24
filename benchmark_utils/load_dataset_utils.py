@@ -148,3 +148,56 @@ def load_bulk_facs(**kwargs) -> dict:
     data = {"dataset": bulk_data.T, "ground_truth": facs_results}
 
     return data
+
+
+def load_bulk_facs_tpm(**kwargs) -> dict:
+    """Load and preprocess the Bulk/FACS TPM dataset.
+
+    Return
+    ------
+    data: dict
+        The preprocessed Bulk/FACS TPM dataset.
+    """
+    # Load data
+    facs_results = (
+        pd.read_csv(
+            "/home/owkin/project/bulk_facs/240214_majorCelltypes.csv", index_col=0
+        )
+        .drop(["No.B.Cells.in.Live.Cells", "NKT.Cells.in.Live.Cells"], axis=1)
+        .set_index("Sample")
+    )
+    facs_results = facs_results.rename(
+        {
+            "B.Cells.in.Live.Cells": "B",
+            "NK.Cells.in.Live.Cells": "NK",
+            "T.Cells.in.Live.Cells": "T",
+            "Monocytes.in.Live.Cells": "Mono",
+            "Dendritic.Cells.in.Live.Cells": "DC",
+        },
+        axis=1,
+    )
+    facs_results = facs_results.dropna()
+    bulk_data = pd.read_csv(
+        (
+            "/home/owkin/project/bulk_facs/gene_counts20230103_batch1-5_all_cleaned-TPMnorm-allpatients.tsv"
+        ),
+        index_col=0,
+        sep="\t"
+    ).T
+    common_samples = pd.read_csv(
+        "/home/owkin/project/bulk_facs/RNA-FACS_common-samples.csv", index_col=0
+    )
+    # Align bulk and facs samples
+    common_facs = common_samples.set_index("FACS.ID")["Patient"]
+    facs_results = facs_results.loc[facs_results.index.isin(common_facs.keys())]
+    facs_results = facs_results.rename(index=common_facs)
+    common_bulk = common_samples.set_index("RNAseq_ID")["Patient"]
+    bulk_data = bulk_data.loc[bulk_data.index.isin(common_bulk.keys())]
+    bulk_data = bulk_data.rename(index=common_bulk)
+    bulk_data = bulk_data.loc[facs_results.index]
+    bulk_data.index = bulk_data.index.astype(str)
+    facs_results.index = facs_results.index.astype(str)
+
+    data = {"dataset": bulk_data.T, "ground_truth": facs_results}
+
+    return data
