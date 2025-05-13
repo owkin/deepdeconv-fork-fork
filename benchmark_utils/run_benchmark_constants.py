@@ -69,31 +69,37 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.NNLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "DWLS": {
         "_target_": "benchmark_utils.DWLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "OLS": {
         "_target_": "benchmark_utils.OLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "RLR": {
         "_target_": "benchmark_utils.RLRMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "NuSVR": {
         "_target_": "benchmark_utils.NuSVRMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "WNNLS": {
         "_target_": "benchmark_utils.WNNLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
     },
     "scVI": {
         "_target_": "benchmark_utils.scVIMethod",
@@ -114,11 +120,15 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.TAPEMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "adata_train": None,
+        "use_signature": False,
     },
     "Scaden": {
         "_target_": "benchmark_utils.ScadenMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "adata_train": None,
+        "use_signature": False,
     }
 }
 
@@ -156,8 +166,8 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
 N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
 TRAIN_DATASETS = {"CTI"}
 SINGLE_CELL_DATASETS = {"TOY", "CTI"}
-MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI"}
-SIGNATURE_MATRIX_MODELS = {"NNLS", "OLS", "DWLS", "RLR", "NuSVR", "WNNLS", "TAPE", "Scaden"}
+MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI", "TAPE", "Scaden"}
+SIGNATURE_MATRIX_MODELS = {"NNLS", "OLS", "DWLS", "RLR", "NuSVR", "WNNLS"}
 SINGLE_CELL_GRANULARITIES = {
     "1st_level_granularity", 
     "2nd_level_granularity", 

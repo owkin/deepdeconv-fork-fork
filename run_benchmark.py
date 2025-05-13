@@ -68,6 +68,7 @@ def run_benchmark(
                                 granularity
                             )
                         all_data["datasets"][dataset][granularity] = train_test_index
+            
 
 
     logger.info("All the data is now loaded.")
@@ -148,7 +149,6 @@ def run_benchmark(
     # Basic plotting
     plot_benchmark_correlations(df_all_metrics, save_path=experiment_name)
     logger.debug(f"Saved plots.")
-
     open(f"{experiment_name}/experiment_over.txt", "w").close() # Finish experiment
     logger.info("Experiment over.")
 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     # )
     # args = parser.parse_args()
     # print(args.config)
-    config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml")
+    config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test_deep_baselines.yaml")
     # config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
     
-    run_benchmark(**config_dict)
+    run_benchmark(**config_dict)    

@@ -14,6 +14,7 @@ from pydeconv.model import OLS, NNLS, DWLS, RLR, NuSVR, WNNLS
 import torch
 import torch.serialization
 import functools
+import scipy.sparse
 
 from benchmark_utils.latent_signature_utils import create_latent_signature
 from benchmark_utils.deconv_utils import use_nnls_method
@@ -23,6 +24,33 @@ from benchmark_utils.training_utils import (
     fit_scvi,
     fit_mixupvi,
 )
+
+def log_scale_data(data: np.ndarray|pd.DataFrame|scipy.sparse.spmatrix, base: float = 2.0, pseudocount: float = 1.0) -> np.ndarray|pd.DataFrame:
+    """Apply log transformation to the data with a pseudocount.
+    
+    Parameters
+    ----------
+    data : np.ndarray, pd.DataFrame, or scipy.sparse.spmatrix
+        Input data to transform
+    base : float, default=2.0
+        Base of the logarithm
+    pseudocount : float, default=1.0
+        Pseudocount to add before taking log to handle zeros
+        
+    Returns
+    -------
+    np.ndarray or pd.DataFrame
+        Log-transformed data
+    """
+    if isinstance(data, pd.DataFrame):
+        return np.log1p(data.astype(np.float64) + (pseudocount - 1)) / np.log(base)
+    else:
+        # Convert sparse matrix to dense if needed
+        if scipy.sparse.issparse(data):
+            data = data.toarray()
+        # Ensure data is float64
+        data = data.astype(np.float64)
+        return np.log1p(data + (pseudocount - 1)) / np.log(base)
 
 def _patch_torch_load():
     """Patch torch.load to use weights_only=False by default for TAPE compatibility"""
@@ -54,22 +82,51 @@ class AbstractDeconvolutionMethod:
 
 class PydeconvBaseMethod(AbstractDeconvolutionMethod):
     """Base class for pydeconv-based methods."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
+    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame, use_log_scale: bool = False):
         self.signature_matrix_name = signature_matrix_name
+        self.use_log_scale = use_log_scale
+        
+        # Apply log scaling if requested
+        if self.use_log_scale:
+            logger.debug(f"Applying log scaling to signature matrix for {signature_matrix_name}")
+            try:
+                signature_matrix = log_scale_data(signature_matrix)
+            except Exception as e:
+                logger.error(f"Error applying log scaling to signature matrix: {str(e)}")
+                raise
+            
         # Convert pandas DataFrame to SignatureMatrix and ensure numpy array
-        self.signature_matrix = SignatureMatrix(signature_matrix.astype(np.float64))
+        try:
+            self.signature_matrix = SignatureMatrix(signature_matrix.astype(np.float64))
+        except Exception as e:
+            logger.error(f"Error converting signature matrix to SignatureMatrix: {str(e)}")
+            raise
+            
         self.solver = None  # Will be set by child classes
         
     def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
         if isinstance(to_deconvolve, ad.AnnData):
             # Ensure data is in correct format
-            if isinstance(to_deconvolve.X, np.ndarray):
-                to_deconvolve.X = to_deconvolve.X.astype(np.float64)
+            if isinstance(to_deconvolve.X, np.ndarray) or scipy.sparse.issparse(to_deconvolve.X):
+                data = to_deconvolve.X
+                if self.use_log_scale:
+                    logger.debug("Applying log scaling to AnnData.X")
+                    data = log_scale_data(data)
+                to_deconvolve.X = data
+                
             if "counts" in to_deconvolve.layers:
-                to_deconvolve.layers["counts"] = to_deconvolve.layers["counts"].astype(np.float64)
+                data = to_deconvolve.layers["counts"]
+                if self.use_log_scale:
+                    logger.debug("Applying log scaling to AnnData.layers['counts']")
+                    data = log_scale_data(data)
+                to_deconvolve.layers["counts"] = data
         else:
             # For DataFrame input, convert to AnnData
-            adata = ad.AnnData(to_deconvolve.T.astype(np.float64))
+            data = to_deconvolve.T
+            if self.use_log_scale:
+                logger.debug("Applying log scaling to DataFrame input")
+                data = log_scale_data(data)
+            adata = ad.AnnData(data)
             adata.layers["counts"] = adata.X
             to_deconvolve = adata
             
@@ -313,18 +370,43 @@ class DestVIMethod(AbstractDeconvolutionMethod):
     
 class TAPEMethod(AbstractDeconvolutionMethod):
     """TAPE deconvolution method."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
+    def __init__(
+        self,
+        signature_matrix_name: str,
+        signature_matrix: pd.DataFrame,
+        adata_train: ad.AnnData = None,
+        use_signature: bool = True,
+        cell_type_column: str = "cell_type",  # Optionally allow user to specify
+    ):
         self.signature_matrix_name = signature_matrix_name
-        self.signature_matrix = signature_matrix
-        
-    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
+        self.adata_train = adata_train
+        self.use_signature = use_signature
+
+        if use_signature or adata_train is None:
+            self.signature_matrix = signature_matrix
+        else:
+            # Gene filtering step
+            if "highly_variable" in adata_train.var.columns:
+                filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+                adata_train = adata_train[:, filtered_genes]
+            else:
+                logger.warning("No 'highly_variable' column found in adata_train.var; using all genes.")
+            logger.info("Creating signature matrix from adata_train for TAPE")
+            if cell_type_column not in adata_train.obs.columns:
+                raise ValueError(f"Cell type column '{cell_type_column}' not found in adata_train.obs")
+            self.signature_matrix = pd.DataFrame(
+                adata_train.layers["counts"].toarray(),
+                index=adata_train.obs[cell_type_column].values,
+                columns=adata_train.var_names
+            )
+
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData | pd.DataFrame):
         """Apply the TAPE method on data to deconvolve."""
         if isinstance(to_deconvolve, ad.AnnData):
-            # Pseudobulks constructed from scRNAseq
             to_deconvolve = pd.DataFrame(
                 index=to_deconvolve.obs_names,
                 columns=to_deconvolve.var_names,
-                data=to_deconvolve.layers["counts"]
+                data=to_deconvolve.layers["counts"],
             ).T
         elif not isinstance(to_deconvolve, pd.DataFrame):
             message = (
@@ -333,32 +415,64 @@ class TAPEMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
+
         _, deconvolution_results = Deconvolution(
-            self.signature_matrix.T, to_deconvolve.T,
-            sep='\t', scaler='mms',
-            datatype='counts', genelenfile=None,
-            mode='overall', adaptive=True, variance_threshold=0.98,
+            self.signature_matrix.T,
+            to_deconvolve.T,
+            sep="\t",
+            scaler="mms",
+            datatype="counts",
+            genelenfile=None,
+            mode="overall",
+            adaptive=True,
+            variance_threshold=0.98,
             save_model_name=None,
-            batch_size=128, epochs=128, seed=1
+            batch_size=128,
+            epochs=128,
+            seed=1,
         )
 
         return deconvolution_results
 
 class ScadenMethod(AbstractDeconvolutionMethod):
     """Apply the Scaden method on data to deconvolve."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
+    def __init__(
+        self,
+        signature_matrix_name: str,
+        signature_matrix: pd.DataFrame,
+        adata_train: ad.AnnData = None,
+        use_signature: bool = True,
+        cell_type_column: str = "cell_type",  # Optionally allow user to specify
+    ):
         self.signature_matrix_name = signature_matrix_name
-        self.signature_matrix = signature_matrix
-        
-    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
+        self.adata_train = adata_train
+        self.use_signature = use_signature
+
+        if use_signature or adata_train is None:
+            self.signature_matrix = signature_matrix
+        else:
+            # Gene filtering step
+            if "highly_variable" in adata_train.var.columns:
+                filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+                adata_train = adata_train[:, filtered_genes]
+            else:
+                logger.warning("No 'highly_variable' column found in adata_train.var; using all genes.")
+            logger.info("Creating signature matrix from adata_train for Scaden")
+            if cell_type_column not in adata_train.obs.columns:
+                raise ValueError(f"Cell type column '{cell_type_column}' not found in adata_train.obs")
+            self.signature_matrix = pd.DataFrame(
+                adata_train.layers["counts"].toarray(),
+                index=adata_train.obs[cell_type_column].values,
+                columns=adata_train.var_names
+            )
+
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData | pd.DataFrame):
         """Apply the Scaden method on data to deconvolve."""
         if isinstance(to_deconvolve, ad.AnnData):
-            # Pseudobulks constructed from scRNAseq
             to_deconvolve = pd.DataFrame(
                 index=to_deconvolve.obs_names,
                 columns=to_deconvolve.var_names,
-                data=to_deconvolve.layers["counts"]
+                data=to_deconvolve.layers["counts"],
             ).T
         elif not isinstance(to_deconvolve, pd.DataFrame):
             message = (
@@ -367,11 +481,14 @@ class ScadenMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
-        deconvolution_results = ScadenDeconvolution(self.signature_matrix.T,
-                                            to_deconvolve.T,
-                                            sep='\t',
-                                            batch_size=128, epochs=128)
+
+        deconvolution_results = ScadenDeconvolution(
+            self.signature_matrix.T,
+            to_deconvolve.T,
+            sep="\t",
+            batch_size=128,
+            epochs=128,
+        )
 
         return deconvolution_results
 

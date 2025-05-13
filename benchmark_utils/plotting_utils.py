@@ -131,36 +131,75 @@ def plot_deconv_results_group(correlations_group, save=False, save_path="", file
         plt.savefig(f"{save_path}/{filename}.png", dpi=300)
 
 def plot_deconv_lineplot(results: Dict[int, pd.DataFrame],
-                         save=False,
-                         save_path="",
-                         filename=""):
+                         metric: str = "correlations",
+                         save: bool = False,
+                         save_path: str = "",
+                         filename: str = ""):
+    """Plot metrics vs number of cells as a line plot."""
     if filename == "":
         granularity = results["granularity"].unique()[0]
         sampling_method = results["sampling_method"].unique()[0]
-        filename = f"{granularity}_{sampling_method}_sampling_numcells_lineplot"
+        filename = f"{granularity}_{sampling_method}_sampling_numcells_{metric}_lineplot"
 
-    results = results[["correlations","deconv_method", "num_cells"]]
+    # Configure plot settings based on metric
+    metric_settings = {
+        "correlations": {
+            "title": "Pearson correlation coefficient (vs) # sampled cells",
+            "ylabel": "Correlation"
+        },
+        "mse": {
+            "title": "Mean Squared Error (vs) # sampled cells",
+            "ylabel": "MSE"
+        },
+        "mae": {
+            "title": "Mean Absolute Error (vs) # sampled cells",
+            "ylabel": "MAE"
+        }
+    }
+
+    if metric not in metric_settings:
+        logger.warning(f"Unknown metric {metric}, using default correlation settings")
+        metric_settings[metric] = metric_settings["correlations"]
+
+    # Ensure we have the required columns
+    required_cols = [metric, "deconv_method", "num_cells"]
+    missing_cols = [col for col in required_cols if col not in results.columns]
+    if missing_cols:
+        raise KeyError(f"Missing required columns: {missing_cols}. Available columns: {results.columns}")
+
     plt.clf()
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    sns.lineplot(data=results,
-                 x="num_cells",
-                 y="correlations",
-                 hue="deconv_method")
+    
+    # Create line plot
+    sns.lineplot(
+        data=results,
+        x="num_cells",
+        y=metric,
+        hue="deconv_method"
+    )
 
-    plt.title("Pearson correlation coefficient (vs) # sampled cells")
+    # Set titles and labels
+    plt.title(metric_settings[metric]["title"])
     plt.xlabel("Number of cells per pseudobulk")
-    plt.ylabel("Correlation")
-    plt.show()
-
+    plt.ylabel(metric_settings[metric]["ylabel"])
+    
+    # Add legend with better positioning
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    
     if save:
-        path = f"/home/owkin/project/plots/{filename}.png"
+        path = f"{save_path}/{filename}.png"
         if os.path.isfile(path):
-            new_path = f"/home/owkin/project/plots/{filename}_{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.png"
+            new_path = f"{save_path}/{filename}_{datetime.now().strftime('%d_%m_%Y_%H_%M_%S')}.png"
             logger.warning(f"{path} already exists. Saving file on this path instead: {new_path}")
             path = new_path
-        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
-        logger.debug(f"Plot saved to the following path: {save_path}/{filename}.png")
+        plt.savefig(path, dpi=300, bbox_inches='tight')
+        logger.debug(f"Plot saved to the following path: {path}")
+    
+    plt.show()
 
 
 def plot_metrics(model_history, train: bool = True, n_epochs: int = 100):

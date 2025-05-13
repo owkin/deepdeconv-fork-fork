@@ -87,6 +87,7 @@ def load_cti(n_variable_genes: int, **kwargs) -> dict:
     adata = preprocess_scrna(adata,
                      keep_genes=n_variable_genes,
                      batch_key="donor_id")
+    
     data = {"dataset": adata}
     return data
 

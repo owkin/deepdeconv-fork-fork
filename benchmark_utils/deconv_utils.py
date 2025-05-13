@@ -59,11 +59,23 @@ def initialize_deconv_methods(
             raise NotImplementedError(message)
         if deconv_method in MODEL_TO_FIT:
             logger.debug(f"Training deconvolution method {deconv_method}...")
+
+            ## to remove
+            # Subsample 1000 cells from training data
+            n_cells = min(1000,  all_data["datasets"][train_dataset]["dataset"].obs.shape[0])
+            idx = np.random.choice(all_data["datasets"][train_dataset]["dataset"].obs_names, 
+                                   n_cells, 
+                                   replace=False)
+            all_data["datasets"][train_dataset]["dataset"] = all_data["datasets"][train_dataset]["dataset"][idx]
+        
+            ## to remove
+
             all_train_dset = all_data["datasets"][train_dataset]
             train_dset = all_train_dset["dataset"][
                 all_train_dset[granularity]["Train index"]
             ]
             kwargs["adata_train"] = train_dset
+            
             kwargs["adata_train"].obs = kwargs["adata_train"].obs.rename(
                 {f"cell_types_grouped_{granularity}": "cell_types_grouped"},
                 axis = 1
