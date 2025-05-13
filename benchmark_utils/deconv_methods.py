@@ -376,7 +376,7 @@ class TAPEMethod(AbstractDeconvolutionMethod):
         signature_matrix: pd.DataFrame,
         adata_train: ad.AnnData = None,
         use_signature: bool = True,
-        cell_type_column: str = "cell_type",  # Optionally allow user to specify
+        cell_type_column: str = "cell_types_grouped",  # Optionally allow user to specify
     ):
         self.signature_matrix_name = signature_matrix_name
         self.adata_train = adata_train
@@ -417,7 +417,7 @@ class TAPEMethod(AbstractDeconvolutionMethod):
             raise ValueError(message)
 
         _, deconvolution_results = Deconvolution(
-            self.signature_matrix.T,
+            self.signature_matrix,
             to_deconvolve.T,
             sep="\t",
             scaler="mms",
@@ -442,7 +442,7 @@ class ScadenMethod(AbstractDeconvolutionMethod):
         signature_matrix: pd.DataFrame,
         adata_train: ad.AnnData = None,
         use_signature: bool = True,
-        cell_type_column: str = "cell_type",  # Optionally allow user to specify
+        cell_type_column: str = "cell_types_grouped",  # Optionally allow user to specify
     ):
         self.signature_matrix_name = signature_matrix_name
         self.adata_train = adata_train
@@ -483,7 +483,7 @@ class ScadenMethod(AbstractDeconvolutionMethod):
             raise ValueError(message)
 
         deconvolution_results = ScadenDeconvolution(
-            self.signature_matrix.T,
+            self.signature_matrix,
             to_deconvolve.T,
             sep="\t",
             batch_size=128,
