@@ -65,15 +65,6 @@ def initialize_deconv_methods(
                 all_train_dset[granularity]["Train index"]
             ]
 
-            ## to remove
-            # Subsample 1000 cells from training data
-            n_cells = min(1000,  train_dset.obs.shape[0])
-            idx = np.random.choice(train_dset.obs_names, 
-                                   n_cells, 
-                                   replace=False)
-            train_dset = train_dset[idx]
-            ## to remove
-
             kwargs["adata_train"] = train_dset
             kwargs["adata_train"].obs = kwargs["adata_train"].obs.rename(
                 {f"cell_types_grouped_{granularity}": "cell_types_grouped"},

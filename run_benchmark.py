@@ -114,6 +114,7 @@ def run_benchmark(
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key] = {}
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key]["deconvolution_results"] = deconv_results
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key]["ground_truth"] = evaluation_pseudobulks["df_proportions_test"]
+                    del evaluation_pseudobulks
         else:
             # Direct inference on Bulk data
             # TODO: should we allow inference on scRNAseq-derived pseudobulks, from bulk granularities ?
@@ -154,13 +155,13 @@ def run_benchmark(
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     "--config", type=str, required=True, help="Path to the YAML configuration file"
-    # )
-    # args = parser.parse_args()
-    # print(args.config)
-    config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test_deep_baselines.yaml")
-    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to the YAML configuration file"
+    )
+    args = parser.parse_args()
+    print(args.config)
+    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml")
+    config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
     
     run_benchmark(**config_dict)    

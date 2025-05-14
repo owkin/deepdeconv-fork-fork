@@ -137,7 +137,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "_target_": "benchmark_utils.create_purified_pseudobulk_dataset",
         "adata": None,
         "cell_type_group": "cell_types_grouped",
-        "aggregation_method": "mean",
+        "aggregation_method": "sum", #"mean",
     },
     "UNIFORM": {
         "_target_": "benchmark_utils.create_uniform_pseudobulk_dataset",
@@ -145,7 +145,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "n_sample": None,
         "n_cells": None,
         "cell_type_group": "cell_types_grouped",
-        "aggregation_method": "mean",
+        "aggregation_method": "sum",  #"mean",
     },
     "DIRICHLET": {
         "_target_": "benchmark_utils.create_dirichlet_pseudobulk_dataset",
@@ -208,11 +208,13 @@ DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
     "RLR": "adata_pseudobulk_test_rc",
     "NuSVR": "adata_pseudobulk_test_rc",
     "WNNLS": "adata_pseudobulk_test_rc",
-    "TAPE": "adata_pseudobulk_test_rc",
-    "Scaden": "adata_pseudobulk_test_rc",
     "MixUpVI": "adata_pseudobulk_test_counts",
     "scVI": "adata_pseudobulk_test_counts",
     "DestVI": "adata_pseudobulk_test_counts",
+    # If you want to use TAPE or Scaden with signature matrix (which is in relative counts)
+    # you need to use the relative counts data `adata_pseudobulk_test_rc`
+    "TAPE": "adata_pseudobulk_test_counts_sum",
+    "Scaden": "adata_pseudobulk_test_counts_sum",
 }
 TRAINING_CONSTANTS_TO_SAVE = [
     "LATENT_SIZE",

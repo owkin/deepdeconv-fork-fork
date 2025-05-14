@@ -208,7 +208,6 @@ def create_dirichlet_pseudobulk_dataset(
     prior_alphas: np.array = None,
     n_sample: int = 300,
     cell_type_group: str = "cell_types_grouped",
-    aggregation_method : str = "mean",
     n_cells : int = 1000,
     is_n_cells_random : bool = False,
     add_sparsity : bool = False,
@@ -240,7 +239,7 @@ def create_dirichlet_pseudobulk_dataset(
     )
 
     random.seed(seed)
-    averaged_data, group = {"relative_counts": [], "counts": []}, []
+    averaged_data, group = {"relative_counts": [], "counts": [], "counts_sum": []}, []
     all_adata_samples = []
     for i in range(n_sample):
         sample_data = []
@@ -258,20 +257,16 @@ def create_dirichlet_pseudobulk_dataset(
                 )
             sample_data.extend(cell_sample)
         adata_sample = adata[sample_data]
-        if aggregation_method == "mean":
-            averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0])
-            X = np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
-            # TODO: For now, we remove the possibility to add sparsity, as all_adata_samples would not be affected
-            # if add_sparsity:
-            #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
-            averaged_data["counts"].append(X)
-        # TODO: For now, we remove the possibility to aggregate by sum, as all_adata_samples would not be affected
-        # else:
-        #     averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0])
-        #     X = np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
-        #     if add_sparsity:
-        #         X = random_state.binomial(1, 0.2, X.shape[0]) * X
-        #     averaged_data["counts"].append(X)
+
+        averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0])
+        X = np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
+        X_sum = np.array(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
+        # TODO: For now, we remove the possibility to add sparsity, as all_adata_samples would not be affected
+        # if add_sparsity:
+        #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
+        averaged_data["counts"].append(X)
+        averaged_data["counts_sum"].append(X_sum)
+        
         all_adata_samples.append(adata_sample)
 
     # pseudobulk dataset
@@ -280,6 +275,9 @@ def create_dirichlet_pseudobulk_dataset(
                                                     )
     adata_pseudobulk_counts = create_anndata_pseudobulk(adata.obs, adata.var_names,
                                                     np.array(averaged_data["counts"])
+                                                    )
+    adata_pseudobulk_counts_sum = create_anndata_pseudobulk(adata.obs, adata.var_names,
+                                                    np.array(averaged_data["counts_sum"])
                                                     )
 
     # ground truth fractions
@@ -295,6 +293,7 @@ def create_dirichlet_pseudobulk_dataset(
     pseudobulks = {
         "all_adata_samples_test": all_adata_samples,
         "adata_pseudobulk_test_counts": adata_pseudobulk_counts,
+        "adata_pseudobulk_test_counts_sum": adata_pseudobulk_counts_sum,
         "adata_pseudobulk_test_rc": adata_pseudobulk_rc,
         "df_proportions_test": groundtruth_fractions,
     }     
