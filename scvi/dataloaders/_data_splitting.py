@@ -233,10 +233,10 @@ class MixUpDataSplitter(DataSplitter):
 
         cell_type_key = None
         if ("labels_key" in self.adata_manager.registry["setup_args"].keys()) and (
-            (labels_key := self.adata_manager.registry["setup_args"]["labels_key"]) == \
-            "cell_type" or labels_key == "cell_types_grouped"
+            self.adata_manager.registry["setup_args"]["labels_key"] is not None) and (
+            "cell_type" in self.adata_manager.registry["setup_args"]["labels_key"]
         ):
-            cell_type_key = labels_key
+            cell_type_key = self.adata_manager.registry["setup_args"]["labels_key"]
 
         if cell_type_key is not None:
             batch_size = self.data_loader_kwargs["batch_size"]
