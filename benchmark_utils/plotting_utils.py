@@ -75,8 +75,18 @@ def plot_deconv_results(correlations, save=False, save_path="", filename=""):
     correlations = correlations[["correlations","deconv_method"]]
     plt.clf()
     sns.set_style("whitegrid")
-    # Boxplot
-    boxplot = sns.boxplot(correlations, x="deconv_method", y="correlations", hue="deconv_method")
+    # Boxplot with wider boxes, smaller outliers, and lighter palette
+    plt.figure(figsize=(10, 6))
+    boxplot = sns.boxplot(
+        data=correlations,
+        x="deconv_method",
+        y="correlations",
+        hue="deconv_method",
+        width=0.8,  # Wider boxes,
+        dodge=False,
+        palette=sns.color_palette("pastel"),  # Lighter palette
+        flierprops=dict(marker='o', markersize=2, linestyle='none', markerfacecolor='gray')  # Smaller outliers
+    )
     plt.xticks(rotation=90)
     # Plot the medians
     x_categories = [t.get_text() for t in boxplot.get_xticklabels()] # order of categories
@@ -95,14 +105,16 @@ def plot_deconv_results(correlations, save=False, save_path="", filename=""):
             boxplot.text(
                 xtick,
                 y_position.loc[method],
-                f"{median_value:.4f}",
-                size="x-small",
+                f"{median_value:.3f}",
                 color="black",
                 ha="center",
                 weight="semibold",
+                fontsize=10,
             )
+    # Remove the title (do not set plt.title())
     if save:
-        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300, bbox_inches='tight')
+        plt.close()
 
 def plot_deconv_results_group(correlations_group, save=False, save_path="", filename=""):
     """Plot the deconv correlation results from sanity checks 2 and 3.
@@ -130,6 +142,65 @@ def plot_deconv_results_group(correlations_group, save=False, save_path="", file
     if save:
         plt.savefig(f"{save_path}/{filename}.png", dpi=300)
 
+
+def plot_error_metric(correlations, metric_name, save=False, save_path="", filename=""):
+    """Plot error metrics (MSE or MAE) boxplots."""
+    if filename == "":
+        granularity = correlations["granularity"].unique()[0]
+        if "sampling_method" in correlations.columns and isinstance(correlations["sampling_method"].unique()[0],str):
+            sampling_method = correlations["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_{metric_name}_boxplot"
+        else:
+            filename = f"{granularity}_{metric_name}_boxplot"
+
+    correlations = correlations[[metric_name, "deconv_method"]]
+    plt.clf()
+    sns.set_style("whitegrid")
+    # Boxplot
+    plt.figure(figsize=(10, 6))
+    boxplot = sns.boxplot(
+        data=correlations,
+        x="deconv_method",
+        y=metric_name,
+        hue="deconv_method",
+        width=0.8,  # Wider boxes
+        dodge=False,
+        palette=sns.color_palette("pastel"),  # Lighter palette
+        flierprops=dict(marker='o', markersize=2, linestyle='none', markerfacecolor='gray')  # Smaller outliers
+    )
+    plt.xticks(rotation=90)
+    
+    # Plot the medians
+    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    medians = (
+        correlations.groupby("deconv_method")[metric_name]
+        .median()
+        .reindex(x_categories)
+        .round(4)
+    )
+    y_range = correlations[metric_name].max() - correlations[metric_name].min()
+    vertical_offset = y_range * 0.0005
+    y_position = medians + vertical_offset
+    
+    for xtick, method in enumerate(x_categories):
+        median_value = medians.loc[method]
+        if np.isfinite(median_value):
+            boxplot.text(
+                xtick,
+                y_position.loc[method],
+                f"{median_value:.4f}",
+                color="black",
+                ha="center",
+                weight="semibold",
+                fontsize=10,
+            )
+    
+    # plt.title(f"{metric_name.upper()} by Deconvolution Method")
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300, bbox_inches='tight')
+        plt.close()
+
+
 def plot_deconv_lineplot(results: Dict[int, pd.DataFrame],
                          metric: str = "correlations",
                          save: bool = False,
@@ -144,15 +215,12 @@ def plot_deconv_lineplot(results: Dict[int, pd.DataFrame],
     # Configure plot settings based on metric
     metric_settings = {
         "correlations": {
-            "title": "Pearson correlation coefficient (vs) # sampled cells",
             "ylabel": "Correlation"
         },
         "mse": {
-            "title": "Mean Squared Error (vs) # sampled cells",
             "ylabel": "MSE"
         },
         "mae": {
-            "title": "Mean Absolute Error (vs) # sampled cells",
             "ylabel": "MAE"
         }
     }
@@ -179,8 +247,7 @@ def plot_deconv_lineplot(results: Dict[int, pd.DataFrame],
         hue="deconv_method"
     )
 
-    # Set titles and labels
-    plt.title(metric_settings[metric]["title"])
+    # Set labels
     plt.xlabel("Number of cells per pseudobulk")
     plt.ylabel(metric_settings[metric]["ylabel"])
     
@@ -201,6 +268,8 @@ def plot_deconv_lineplot(results: Dict[int, pd.DataFrame],
     
     plt.show()
 
+
+#### LOSSES PLOTS
 
 def plot_metrics(model_history, train: bool = True, n_epochs: int = 100):
     """Plot the train or val metrics from training."""
@@ -345,50 +414,121 @@ def compare_tuning_results(
     sns.lineplot(x="epoch", y=variable_to_plot, hue=variable_tuned, ci="sd", data=all_results, err_style="bars", palette=custom_palette)
     plt.show()
 
-def plot_error_metric(correlations, metric_name, save=False, save_path="", filename=""):
-    """Plot error metrics (MSE or MAE) boxplots."""
-    if filename == "":
-        granularity = correlations["granularity"].unique()[0]
-        if "sampling_method" in correlations.columns and isinstance(correlations["sampling_method"].unique()[0],str):
-            sampling_method = correlations["sampling_method"].unique()[0]
-            filename = f"{granularity}_{sampling_method}_sampling_{metric_name}_boxplot"
-        else:
-            filename = f"{granularity}_{metric_name}_boxplot"
+## SUBPLOTS
+def plot_deconv_results_and_error_metric_subplots(
+    df_corr, df_error, error_metric,
+    save=False, save_path="", filename=""
+):
+    """
+    Plot correlation and error metric (MSE or MAE) boxplots side by side with a shared legend.
+    """
+    # Prepare data
+    corr_data = df_corr[["correlations", "deconv_method"]]
+    error_data = df_error[[error_metric, "deconv_method"]]
 
-    correlations = correlations[[metric_name, "deconv_method"]]
-    plt.clf()
-    sns.set_style("whitegrid")
-    # Boxplot
-    plt.figure(figsize=(10, 6))
-    boxplot = sns.boxplot(correlations, x="deconv_method", y=metric_name, hue="deconv_method")
-    plt.xticks(rotation=90)
-    
-    # Plot the medians
-    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    # Set up the figure and axes
+    fig, axes = plt.subplots(1, 2, figsize=(18, 7), sharey=False)
+
+    # Common palette
+    palette = sns.color_palette("pastel")
+
+    # Boxplot for correlations
+    box1 = sns.boxplot(
+        data=corr_data,
+        x="deconv_method",
+        y="correlations",
+        hue="deconv_method",
+        width=0.8,
+        palette=palette,
+        dodge=False,
+        flierprops=dict(marker='o', markersize=2, linestyle='none', markerfacecolor='gray'),
+        ax=axes[0]
+    )
+    axes[0].set_xlabel("Deconvolution Method")
+    axes[0].set_ylabel("Correlation")
+    axes[0].set_title("Correlation", fontsize=16)
+    axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=90, fontsize=13)
+
+    # Plot the medians for correlations
+    x_categories = [t.get_text() for t in axes[0].get_xticklabels()]
     medians = (
-        correlations.groupby("deconv_method")[metric_name]
+        corr_data.groupby("deconv_method")["correlations"]
         .median()
         .reindex(x_categories)
         .round(4)
     )
-    y_range = correlations[metric_name].max() - correlations[metric_name].min()
+    y_range = corr_data["correlations"].max() - corr_data["correlations"].min()
     vertical_offset = y_range * 0.0005
     y_position = medians + vertical_offset
-    
     for xtick, method in enumerate(x_categories):
         median_value = medians.loc[method]
         if np.isfinite(median_value):
-            boxplot.text(
+            axes[0].text(
                 xtick,
                 y_position.loc[method],
-                f"{median_value:.4f}",
-                size="x-small",
+                f"{median_value:.3f}",
                 color="black",
                 ha="center",
                 weight="semibold",
+                fontsize=10,
             )
-    
-    plt.title(f"{metric_name.upper()} by Deconvolution Method")
+
+    # Boxplot for error metric
+    box2 = sns.boxplot(
+        data=error_data,
+        x="deconv_method",
+        y=error_metric,
+        hue="deconv_method",
+        width=0.8,
+        dodge=False,
+        palette=palette,
+        flierprops=dict(marker='o', markersize=2, linestyle='none', markerfacecolor='gray'),
+        ax=axes[1]
+    )
+    axes[1].set_xlabel("Deconvolution Method")
+    axes[1].set_ylabel(error_metric.upper())
+    axes[1].set_title(error_metric.upper(), fontsize=16)
+    axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=90, fontsize=13)
+
+    # Plot the medians for error metric
+    x_categories_err = [t.get_text() for t in axes[1].get_xticklabels()]
+    medians_err = (
+        error_data.groupby("deconv_method")[error_metric]
+        .median()
+        .reindex(x_categories_err)
+        .round(4)
+    )
+    y_range_err = error_data[error_metric].max() - error_data[error_metric].min()
+    vertical_offset_err = y_range_err * 0.0005
+    y_position_err = medians_err + vertical_offset_err
+    for xtick, method in enumerate(x_categories_err):
+        median_value = medians_err.loc[method]
+        if np.isfinite(median_value):
+            axes[1].text(
+                xtick,
+                y_position_err.loc[method],
+                f"{median_value:.4f}",
+                color="black",
+                ha="center",
+                weight="semibold",
+                fontsize=10,
+            )
+
+    # Remove individual legends
+    axes[0].legend_.remove()
+    axes[1].legend_.remove()
+
+    # Add a single shared legend
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncol=len(labels), bbox_to_anchor=(0.5, 1.08), fontsize=14)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.98])  # leave space for legend
+
     if save:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
         plt.savefig(f"{save_path}/{filename}.png", dpi=300, bbox_inches='tight')
         plt.close()
+    else:
+        plt.show()
+
