@@ -4,6 +4,15 @@ from .correlation_utils import (
     compute_correlations,
     compute_group_correlations,
 )
+from .error_utils import (
+    compute_benchmark_errors,
+    compute_rmse,
+    compute_mae,
+    compute_mape,
+    compute_group_rmse,
+    compute_group_mae,
+    compute_group_mape,
+)
 from .deconv_methods import (
     DestVIMethod,
     MixUpVIMethod,
@@ -38,6 +47,7 @@ from .plotting_utils import (
     plot_pearson_random,
     plot_purified_deconv_results,
     plot_reconstruction_loss,
+    plot_benchmark_errors,
 )
 from .process_dataset_utils import (
     add_cell_types_grouped,

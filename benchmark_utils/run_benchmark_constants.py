@@ -35,6 +35,39 @@ CORRELATION_FUNCTIONS = {
     },
 }
 
+ERROR_FUNCTIONS = {
+    "root_mean_squared_error": {
+        "_target_": "benchmark_utils.compute_rmse",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+    "mean_absolute_error": {
+        "_target_": "benchmark_utils.compute_mae",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+    "mean_absolute_percentage_error": {
+        "_target_": "benchmark_utils.compute_mape",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+    "cell_type_wise_root_mean_squared_error": {
+        "_target_": "benchmark_utils.compute_group_rmse",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+    "cell_type_wise_mean_absolute_error": { 
+        "_target_": "benchmark_utils.compute_group_mae",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+    "cell_type_wise_mean_absolute_percentage_error": {
+        "_target_": "benchmark_utils.compute_group_mape",
+        "deconv_results": None,
+        "ground_truth_fractions": None,
+    },
+}
+
 DATASETS = {
     "TOY": {
         "_target_": "",
@@ -46,15 +79,18 @@ DATASETS = {
     "BULK_FACS": {
         "_target_": "benchmark_utils.load_bulk_facs",
     },
+    "BULK_FACS_TPM": {
+        "_target_": "benchmark_utils.load_bulk_facs_tpm",
+    },
 }
 
 DECONV_METHODS = {
     "MixUpVI": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
-        "model_path": "",
+        "model_path": "project/model_final_sum/",
         "cell_type_group": "cell_types_grouped",
-        "save_model": False,
+        "save_model": True,
     },
     "NNLS": {
         "_target_": "benchmark_utils.NNLSMethod",
@@ -64,8 +100,8 @@ DECONV_METHODS = {
     "scVI": {
         "_target_": "benchmark_utils.scVIMethod",
         "adata_train": None,
-        "model_path": "",
-        "save_model": False,
+        "model_path": "project/scvi_model/",
+        "save_model": True,
     },
     "DestVI": {
         "_target_": "benchmark_utils.DestVIMethod",

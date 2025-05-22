@@ -53,6 +53,52 @@ def plot_benchmark_correlations(
                     plot_func(group, save=save, save_path=save_path)
 
 
+def plot_benchmark_errors(df_all_errors, save_path: str = "", save: bool = True):
+    """General function to plot benchmark errors, and save them by default."""
+
+    def _get_groups(df, groupby_col):
+        """Returns grouped DataFrames if groupby_col exists and is not empty, else returns a list with the original df."""
+        if groupby_col in df.columns and df[groupby_col].notna().any():
+            return [group for _, group in df.groupby(groupby_col)]
+        return [df]
+
+    plot_func_map = {
+        "root_mean_squared_error": plot_root_mean_squared_error,
+        "mean_absolute_error": plot_mean_absolute_error,
+        "mean_absolute_percentage_error": plot_mean_absolute_percentage_error,
+        "cell_type_wise_root_mean_squared_error": plot_cell_type_wise_root_mean_squared_error,
+        "cell_type_wise_mean_absolute_error": plot_cell_type_wise_mean_absolute_error,
+        "cell_type_wise_mean_absolute_percentage_error": plot_cell_type_wise_mean_absolute_percentage_error,
+    }
+
+    for granularity in df_all_errors.granularity.unique():
+        df_all_errors_temp = df_all_errors[
+            df_all_errors["granularity"] == granularity
+        ]
+        if (
+            "num_cells" in df_all_errors_temp.columns
+            and df_all_errors_temp.num_cells.dropna().nunique() > 1
+        ):
+            # Multiple num_cells were computed
+            # df_to_plot = df_all_errors_temp[
+            #     df_all_errors_temp["error_type"]
+            #     == "root_mean_squared_error"
+            # ]
+            # for group in _get_groups(df_to_plot, "sampling_method"):
+            #     plot_deconv_lineplot(group, save=save, save_path=save_path)
+            logger.error("Multiple num_cells not implemented for errors")
+            raise NotImplementedError("Multiple num_cells not implemented for errors")
+        else:
+            # One pseudobulk num_cells or bulk
+            for error_type in df_all_errors_temp["error_type"].unique():
+                df_to_plot = df_all_errors_temp[
+                    df_all_errors_temp["error_type"] == error_type
+                ]
+                plot_func = plot_func_map.get(error_type, plot_deconv_results)
+                for group in _get_groups(df_to_plot, "sampling_method"):
+                    plot_func(group, save=save, save_path=save_path)
+
+
 def plot_purified_deconv_results(
     deconv_results,
     only_fit_one_baseline,
@@ -356,3 +402,180 @@ def compare_tuning_results(
         palette=custom_palette,
     )
     plt.show()
+
+
+def plot_root_mean_squared_error(errors, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors["granularity"].unique()[0]
+        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+            sampling_method = errors["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_rmse_boxplot"
+        else:
+            filename = f"{granularity}_rmse_boxplot"
+    errors = errors[["errors", "deconv_method"]]
+    plt.clf()
+    sns.set_style("whitegrid")
+    boxplot = sns.boxplot(errors, x="deconv_method", y="errors", hue="deconv_method")
+    plt.xticks(rotation=90)
+    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    medians = (
+        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+    )
+    y_range = errors["errors"].max() - errors["errors"].min()
+    vertical_offset = y_range * 0.0005
+    y_position = medians + vertical_offset
+    for xtick, method in enumerate(x_categories):
+        median_value = medians.loc[method]
+        if np.isfinite(median_value):
+            boxplot.text(
+                xtick,
+                y_position.loc[method],
+                f"{median_value:.4f}",
+                size="x-small",
+                color="black",
+                ha="center",
+                weight="semibold",
+            )
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+
+
+def plot_mean_absolute_error(errors, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors["granularity"].unique()[0]
+        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+            sampling_method = errors["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_mae_boxplot"
+        else:
+            filename = f"{granularity}_mae_boxplot"
+    errors = errors[["errors", "deconv_method"]]
+    plt.clf()
+    sns.set_style("whitegrid")
+    boxplot = sns.boxplot(errors, x="deconv_method", y="errors", hue="deconv_method")
+    plt.xticks(rotation=90)
+    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    medians = (
+        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+    )
+    y_range = errors["errors"].max() - errors["errors"].min()
+    vertical_offset = y_range * 0.0005
+    y_position = medians + vertical_offset
+    for xtick, method in enumerate(x_categories):
+        median_value = medians.loc[method]
+        if np.isfinite(median_value):
+            boxplot.text(
+                xtick,
+                y_position.loc[method],
+                f"{median_value:.4f}",
+                size="x-small",
+                color="black",
+                ha="center",
+                weight="semibold",
+            )
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+
+
+def plot_mean_absolute_percentage_error(errors, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors["granularity"].unique()[0]
+        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+            sampling_method = errors["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_mape_boxplot"
+        else:
+            filename = f"{granularity}_mape_boxplot"
+    errors = errors[["errors", "deconv_method"]]
+    plt.clf()
+    sns.set_style("whitegrid")
+    boxplot = sns.boxplot(errors, x="deconv_method", y="errors", hue="deconv_method")
+    plt.xticks(rotation=90)
+    x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
+    medians = (
+        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+    )
+    y_range = errors["errors"].max() - errors["errors"].min()
+    vertical_offset = y_range * 0.0005
+    y_position = medians + vertical_offset
+    for xtick, method in enumerate(x_categories):
+        median_value = medians.loc[method]
+        if np.isfinite(median_value):
+            boxplot.text(
+                xtick,
+                y_position.loc[method],
+                f"{median_value:.4f}",
+                size="x-small",
+                color="black",
+                ha="center",
+                weight="semibold",
+            )
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+
+
+def plot_cell_type_wise_root_mean_squared_error(errors_group, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors_group["granularity"].unique()[0]
+        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+            sampling_method = errors_group["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_cell_type_rmse_plot"
+        else:
+            filename = f"{granularity}_cell_type_rmse_plot"
+    df = errors_group[["errors", "deconv_method", "cell_types"]]
+    df = df.fillna(0)
+    plt.clf()
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x="cell_types", y="errors", hue="deconv_method", data=df)
+    plt.legend()
+    plt.xlabel("Cell Type")
+    plt.ylabel("RMSE")
+    plt.title("Bar Plot of RMSE by Cell Type and Model")
+    plt.show()
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+
+
+def plot_cell_type_wise_mean_absolute_error(errors_group, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors_group["granularity"].unique()[0]
+        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+            sampling_method = errors_group["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_cell_type_mae_plot"
+        else:
+            filename = f"{granularity}_cell_type_mae_plot"
+    df = errors_group[["errors", "deconv_method", "cell_types"]]
+    df = df.fillna(0)
+    plt.clf()
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x="cell_types", y="errors", hue="deconv_method", data=df)
+    plt.legend()
+    plt.xlabel("Cell Type")
+    plt.ylabel("MAE")
+    plt.title("Bar Plot of MAE by Cell Type and Model")
+    plt.show()
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
+
+
+def plot_cell_type_wise_mean_absolute_percentage_error(errors_group, save=False, save_path="", filename=""):
+    if filename == "":
+        granularity = errors_group["granularity"].unique()[0]
+        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+            sampling_method = errors_group["sampling_method"].unique()[0]
+            filename = f"{granularity}_{sampling_method}_sampling_cell_type_mape_plot"
+        else:
+            filename = f"{granularity}_cell_type_mape_plot"
+    df = errors_group[["errors", "deconv_method", "cell_types"]]
+    df = df.fillna(0)
+    plt.clf()
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x="cell_types", y="errors", hue="deconv_method", data=df)
+    plt.legend()
+    plt.xlabel("Cell Type")
+    plt.ylabel("MAPE")
+    plt.title("Bar Plot of MAPE by Cell Type and Model")
+    plt.show()
+    if save:
+        plt.savefig(f"{save_path}/{filename}.png", dpi=300)
