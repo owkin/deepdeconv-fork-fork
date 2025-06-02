@@ -58,6 +58,7 @@ def launch_evaluation_pseudobulk_samplings(
         )
     logger.debug(message)
 
+    # TODO: Add a check to see if the pseudobulks have to be created with mean or sum!!!!!
     pseudobulks = evaluation_pseudobulk_samplings_func(**kwargs)
 
     return pseudobulks
@@ -330,12 +331,14 @@ def create_dirichlet_pseudobulk_dataset(
             #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
             averaged_data["counts"].append(X)
         # TODO: For now, we remove the possibility to aggregate by sum, as all_adata_samples would not be affected
-        # else:
-        #     averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0])
-        #     X = np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
-        #     if add_sparsity:
-        #         X = random_state.binomial(1, 0.2, X.shape[0]) * X
-        #     averaged_data["counts"].append(X)
+        elif aggregation_method == "sum":
+            averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0])
+            X = np.array(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
+            # if add_sparsity:
+            #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
+            averaged_data["counts"].append(X)
+        else:
+            raise ValueError(f"Aggregation method {aggregation_method} not supported")
         all_adata_samples.append(adata_sample)
 
     # pseudobulk dataset
@@ -363,3 +366,103 @@ def create_dirichlet_pseudobulk_dataset(
         "df_proportions_test": groundtruth_fractions,
     }
     return pseudobulks
+
+def create_purified_50_50_pseudobulk_dataset(
+    adata,
+    cell_type_1,
+    cell_type_2,
+    n_sample,
+    n_cells_per_pseudobulk,
+    cell_type_group="cell_types_grouped",
+    aggregation_method="mean",
+    random_state=None,
+):
+    """Creates multiple pseudobulk datasets by mixing two cell types in equal proportions.
+
+    Args:
+        adata: AnnData object containing single-cell data
+        cell_type_1: First cell type to mix
+        cell_type_2: Second cell type to mix
+        n_sample: Number of pseudobulk samples to generate
+        n_cells_per_pseudobulk: Total number of cells per pseudobulk
+        cell_type_group: Column name in adata.obs containing cell type labels
+        aggregation_method: Method to aggregate cells, either "mean" or "sum"
+        random_state: Random state for reproducibility
+
+    Returns:
+        Dictionary containing:
+            - all_adata_samples_test: List of AnnData objects for each pseudobulk sample
+            - adata_pseudobulk_test_counts: AnnData with raw counts
+            - adata_pseudobulk_test_rc: AnnData with relative counts
+            - df_proportions_test: DataFrame with ground truth proportions
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    # Get cells for each type
+    cells_type1 = adata[adata.obs[cell_type_group] == cell_type_1].copy()
+    cells_type2 = adata[adata.obs[cell_type_group] == cell_type_2].copy()
+
+    # Check if we have enough cells
+    cells_per_type = n_cells_per_pseudobulk // 2
+    if cells_type1.n_obs < cells_per_type or cells_type2.n_obs < cells_per_type:
+        raise ValueError(
+            f"Not enough cells available. Need {cells_per_type} cells per type, "
+            f"but have {cells_type1.n_obs} cells for type 1 and {cells_type2.n_obs} for type 2"
+        )
+
+    averaged_data = {"relative_counts": [], "counts": []}
+    all_adata_samples = []
+
+    for _ in range(n_sample):
+        # Sample cells for each type
+        sample1 = cells_type1[np.random.choice(cells_type1.n_obs, cells_per_type, replace=False)]
+        sample2 = cells_type2[np.random.choice(cells_type2.n_obs, cells_per_type, replace=False)]
+        
+        # Combine samples
+        adata_sample = adata.concatenate(sample1, sample2)
+        all_adata_samples.append(adata_sample)
+
+        if aggregation_method == "mean":
+            averaged_data["relative_counts"].append(
+                adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0]
+            )
+            averaged_data["counts"].append(
+                np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
+            )
+        elif aggregation_method == "sum":
+            averaged_data["relative_counts"].append(
+                adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0]
+            )
+            averaged_data["counts"].append(
+                np.array(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
+            )
+        else:
+            raise ValueError(f"Aggregation method {aggregation_method} not supported")
+
+    # Create pseudobulk datasets
+    adata_pseudobulk_rc = create_anndata_pseudobulk(
+        adata.obs, adata.var_names, np.array(averaged_data["relative_counts"])
+    )
+    adata_pseudobulk_counts = create_anndata_pseudobulk(
+        adata.obs, adata.var_names, np.array(averaged_data["counts"])
+    )
+
+    # Create ground truth proportions
+    cell_types = pd.Series(adata.obs[cell_type_group].unique())
+    groundtruth_fractions = pd.DataFrame(
+        0,
+        index=adata_pseudobulk_counts.obs_names,
+        columns=list(cell_types),
+    )
+    groundtruth_fractions[cell_type_1] = 0.5
+    groundtruth_fractions[cell_type_2] = 0.5
+
+    pseudobulks = {
+        "all_adata_samples_test": all_adata_samples,
+        "adata_pseudobulk_test_counts": adata_pseudobulk_counts,
+        "adata_pseudobulk_test_rc": adata_pseudobulk_rc,
+        "df_proportions_test": groundtruth_fractions,
+    }
+    return pseudobulks
+

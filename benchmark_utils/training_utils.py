@@ -24,6 +24,7 @@ from constants import (
     N_HIDDEN,
     N_PSEUDOBULKS,
     PSEUDO_BULK,
+    PSEUDO_BULK_AGGREGATION,
     SEED,
     SIGNATURE_TYPE,
     TRAIN_SIZE,
@@ -146,6 +147,7 @@ def fit_mixupvi(
             signature_type=SIGNATURE_TYPE,
             loss_computation=LOSS_COMPUTATION,
             pseudo_bulk=PSEUDO_BULK,
+            pseudo_bulk_aggregation=PSEUDO_BULK_AGGREGATION,
             encode_covariates=encode_covariates,
             mixup_penalty=MIXUP_PENALTY,
             dispersion=DISPERSION,
@@ -180,7 +182,14 @@ def fit_scvi(
             categorical_covariate_keys=CAT_COV,
             continuous_covariate_keys=CONT_COV,
         )
-        scvi_model = scvi.model.SCVI(adata)
+        scvi_model = scvi.model.SCVI(
+            adata,
+            n_latent=LATENT_SIZE,
+            n_hidden=N_HIDDEN,
+            use_batch_norm=USE_BATCH_NORM,
+            dispersion=DISPERSION,
+            gene_likelihood=GENE_LIKELIHOOD,
+        )
         scvi_model.view_anndata_setup()
         scvi_model.train(
             max_epochs=MAX_EPOCHS,
