@@ -11,6 +11,7 @@ import scvi
 from constants import SIGNATURE_TYPE
 
 from .pseudobulk_dataset_utils import create_anndata_pseudobulk
+from sklearn.decomposition import PCA
 
 
 def create_latent_signature(
@@ -44,16 +45,16 @@ def create_latent_signature(
         embeddings from the adata.obsm[(representation_key)] field of the ann data,
         (This assumes that we have encoded the ann data with scvi) and then average them.
 
-    We then output an AnnData object, containing all these representations
-    (n_repeats representation per cell type), whose obs field contains the repeat number
-    in the "repeat" column, and the cell type in the "cell type" column.
-
+    The aggregation method (mean or sum) is determined by the model's pseudo_bulk_aggregation
+    attribute if present, defaulting to mean otherwise.
 
     Parameters
     ----------
     adata: ad.AnnData
         The single cell dataset, with a cell_type_column, and a representation_key in
         the obsm if one wants to aggregate after embedding.
+    use_mixupvi: bool
+        Whether to use mixupvi model.
     average_all_cells: bool
         If True, then average all cells per given cell type. sc_per_pseudobulk will
         not be used.
@@ -63,9 +64,6 @@ def create_latent_signature(
     repeats: int
         The number of representations computed randomly for a given cell type. If
         average_all_cells is True, all repeats will be the same.
-    aggregate_before_embedding: bool
-        Perform the aggregation (average) before embedding the cell-type specific
-        pseudobulk. If false, we aggregate the representations.
     cell_type_column: str
         The field of the ann data obs containing the cell type partition of interest.
     count_key: Optional[str]
@@ -86,6 +84,12 @@ def create_latent_signature(
     cell_type_list = []
     representation_list: list[np.ndarray] = []
     repeat_list = []
+    
+    # Determine aggregation method based on model's attribute if available
+    aggregation_method = "mean"
+    if model is not None and hasattr(model.module, "pseudo_bulk_aggregation"):
+        aggregation_method = model.module.pseudo_bulk_aggregation
+    
     with torch.no_grad():
         for cell_type in adata.obs[cell_type_column].unique():
             for repeat in range(repeats):
@@ -118,9 +122,15 @@ def create_latent_signature(
                     ]  # take first pseudobulk
                 else:
                     if SIGNATURE_TYPE == "pre_encoded":
-                        pseudobulk = (
-                            adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
-                        )
+                        # Use appropriate aggregation method based on the model's configuration
+                        if aggregation_method == "sum":
+                            pseudobulk = (
+                                adata_sampled.layers[count_key].sum(axis=0).reshape(1, -1)
+                            )
+                        else:  # default to mean
+                            pseudobulk = (
+                                adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
+                            )
                         adata_sampled = create_anndata_pseudobulk(
                             adata_sampled.obs, adata_sampled.var_names, pseudobulk
                         )
@@ -130,10 +140,68 @@ def create_latent_signature(
                     if SIGNATURE_TYPE == "pre_encoded":
                         result = result.reshape(-1)
                     elif SIGNATURE_TYPE == "post_inference":
-                        result = result.mean(axis=0)
+                        if aggregation_method == "sum":
+                            result = result.sum(axis=0)
+                        else:  # default to mean
+                            result = result.mean(axis=0)
                 repeat_list.append(repeat)
                 representation_list.append(result)
                 cell_type_list.append(cell_type)
+    full_rpz = np.stack(representation_list, axis=0)
+    obs = pd.DataFrame(pd.Series(cell_type_list, name="cell type"))
+    obs["repeat"] = repeat_list
+    adata_signature = ad.AnnData(X=full_rpz, obs=obs)
+    return adata_signature
+
+
+def create_latent_signature_pca(
+    adata: ad.AnnData,
+    model: PCA = None,
+    average_all_cells: bool = True,
+    sc_per_pseudobulk: int = 3000,
+    repeats: int = 1,
+    cell_type_column: str = "cell_types_grouped",
+    count_key: Optional[str] = "counts",
+    representation_key: Optional[str] = "X_scvi",
+) -> ad.AnnData:
+    """Create a latent signature from a single cell dataset using PCA."""
+
+    cell_type_list = []
+    representation_list: list[np.ndarray] = []
+    repeat_list = []
+    
+    for cell_type in adata.obs[cell_type_column].unique():
+        for repeat in range(repeats):
+            # Sample cells
+            sampled_cells = adata.obs[adata.obs[cell_type_column] == cell_type]
+            if average_all_cells:
+                adata_sampled = adata[sampled_cells.index]
+            else:
+                seed = random.seed()
+                sampled_cells = sampled_cells.sample(
+                    n=sc_per_pseudobulk, random_state=seed, replace=True
+                ).index
+                adata_sampled = adata[sampled_cells]
+            
+            if SIGNATURE_TYPE == "pre_encoded":
+                pseudobulk = (
+                    adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
+                )
+                adata_sampled = create_anndata_pseudobulk(
+                    adata_sampled.obs, adata_sampled.var_names, pseudobulk
+                )
+            
+            result = model.transform(adata_sampled.X.toarray())
+
+            if SIGNATURE_TYPE == "pre_encoded":
+                result = result.reshape(-1)
+            elif SIGNATURE_TYPE == "post_inference":
+                result = result.mean(axis=0)
+
+            repeat_list.append(repeat)
+            representation_list.append(result)
+            cell_type_list.append(cell_type)
+
     full_rpz = np.stack(representation_list, axis=0)
     obs = pd.DataFrame(pd.Series(cell_type_list, name="cell type"))
     obs["repeat"] = repeat_list

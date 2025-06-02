@@ -9,9 +9,10 @@ import pandas as pd
 from loguru import logger
 from TAPE import Deconvolution
 from TAPE.deconvolution import ScadenDeconvolution
+from sklearn.decomposition import PCA
 
 from .deconv_utils import use_nnls_method
-from .latent_signature_utils import create_latent_signature
+from .latent_signature_utils import create_latent_signature, create_latent_signature_pca
 from .pseudobulk_dataset_utils import create_anndata_pseudobulk
 from .training_utils import (
     fit_destvi,
@@ -65,6 +66,46 @@ class NNLSMethod(AbstractDeconvolutionMethod):
         deconvolution_results = use_nnls_method(to_deconvolve, self.signature_matrix)
 
         return deconvolution_results
+    
+class PCA_NNLSMethod(AbstractDeconvolutionMethod):
+    """PCA + NNLS deconvolution method."""
+
+    def __init__(self, adata_train: ad.AnnData, n_components: int = 100):
+        self.adata_train = adata_train
+        self.n_components = n_components
+        self.pca = PCA(n_components=n_components)
+        self.pca.fit(adata_train.X.toarray())
+        self.latent_signature = create_latent_signature_pca(adata_train, self.pca)
+        self.latent_signature = pd.DataFrame(
+            self.latent_signature.X.T,
+            index=self.latent_signature.var_names,
+            columns=self.latent_signature.obs["cell type"],
+        )
+        logger.debug(f"PCA + NNLS method initialized with {n_components} components.")
+
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData | pd.DataFrame):
+        """Apply the PCA + NNLS method on data to deconvolve."""
+        if isinstance(to_deconvolve, ad.AnnData):
+            # Pseudobulks constructed from scRNAseq
+            obs_names = to_deconvolve.obs_names
+            # to_deconvolve = pd.DataFrame(
+            #     index=to_deconvolve.obs_names,
+            #     columns=to_deconvolve.var_names,
+            #     data=to_deconvolve.layers["counts"],
+            # ).T
+        elif not isinstance(to_deconvolve, pd.DataFrame):
+            message = (
+                "Data to deconvolve during inference can either be AnnData or DataFrame, "
+                f"but here it is of type {type(to_deconvolve)}."
+            )
+            logger.error(message)
+            raise ValueError(message)
+        
+        latent_adata = self.pca.transform(to_deconvolve.X)
+        latent_adata = pd.DataFrame(latent_adata, index=obs_names, columns=self.latent_signature.index).T
+        deconvolution_results = use_nnls_method(latent_adata, self.latent_signature)
+        return deconvolution_results
+
 
 
 class MixUpVIMethod(AbstractDeconvolutionMethod):
