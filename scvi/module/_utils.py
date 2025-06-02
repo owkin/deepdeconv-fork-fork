@@ -100,7 +100,7 @@ def compute_ground_truth_proportions(y_pseudobulk, n_labels, n_cells_per_pseudob
     return all_proportions
 
 
-def compute_signature(y, x_):
+def compute_signature(y, x_, pseudo_bulk_aggregation):
     """Compute the signature matrix and signature matrix mask of the batch."""
     x_signature_mask = []
     unique_indices, counts = y.unique(return_counts=True)
@@ -108,7 +108,14 @@ def compute_signature(y, x_):
         idx = (y == cell_type).flatten()
         x_signature_mask.append(idx.tolist())
     x_signature_mask = torch.Tensor(x_signature_mask).to(device="cuda")
-    x_signature_ = torch.matmul(x_signature_mask, x_) / counts.unsqueeze(-1)
+    if pseudo_bulk_aggregation == "mean":
+        x_signature_ = torch.matmul(x_signature_mask, x_) / counts.unsqueeze(-1)
+    elif pseudo_bulk_aggregation == "sum":
+        x_signature_ = torch.matmul(x_signature_mask, x_)
+    else:
+        raise ValueError(
+            f"Unknown pseudo_bulk_aggregation: {pseudo_bulk_aggregation}"
+        )
     return counts, x_signature_mask, x_signature_
 
 

@@ -1,16 +1,16 @@
 """Constants and global variables to run the different deconv files."""
 
 ## Constants for run_mixupvi.py
-TUNE_MIXUPVI = True
+TUNE_MIXUPVI = False
 TRAINING_DATASET = "CTI"  # ["CTI", "TOY", "CTI_PROCESSED", "CTI_RAW"]
-TRAINING_CELL_TYPE_GROUP = "3rd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
-N_GENES = 4000  # number of input genes after preprocessing (NOT USED INSIDE BENCHMARK)
+TRAINING_CELL_TYPE_GROUP = "2nd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
+N_GENES = 2000  # number of input genes after preprocessing (NOT USED INSIDE BENCHMARK)
 
 ## Constants for both run_mixupvi.py and run_benchmark.py
 # For all VI models
 LATENT_SIZE = 30
 MAX_EPOCHS = 100
-SAVE_MODEL = False
+SAVE_MODEL = True
 SEED = 3
 # MixUpVI training hyperparameters
 BATCH_SIZE = 1024
@@ -29,6 +29,7 @@ CAT_COV = None  # None or ["donor_id", "assay"]
 ENCODE_COVARIATES = False  # whether to encode cont/cat covars (they are always decoded)
 LOSS_COMPUTATION = "latent_space"  # ["latent_space", "reconstructed_space"]
 PSEUDO_BULK = "pre_encoded"  # ["pre_encoded", "post_inference"]
+PSEUDO_BULK_AGGREGATION = "mean"  # ["mean", "sum"]
 SIGNATURE_TYPE = "post_inference"  # ["pre_encoded", "post_inference"]
 MIXUP_PENALTY = "l2"  # ["l2", "kl"]
 DISPERSION = "gene"  # ["gene", "gene_label"]

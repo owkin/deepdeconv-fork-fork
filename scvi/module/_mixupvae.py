@@ -165,6 +165,7 @@ class MixUpVAE(VAE):
         signature_type: Tunable[str] = "pre_encoded",
         loss_computation: Tunable[str] = "latent_space",
         pseudo_bulk: Tunable[str] = "pre_encoded",
+        pseudo_bulk_aggregation: Tunable[str] = "mean",
         mixup_penalty: Tunable[str] = "l2",
     ):
         torch.manual_seed(seed)
@@ -207,6 +208,7 @@ class MixUpVAE(VAE):
         self.signature_type = signature_type
         self.loss_computation = loss_computation
         self.pseudo_bulk = pseudo_bulk
+        self.pseudo_bulk_aggregation = pseudo_bulk_aggregation
         self.mixup_penalty = mixup_penalty
         self.z_signature = None
         self.logger_messages = set()
@@ -317,13 +319,22 @@ class MixUpVAE(VAE):
             size=(self.n_pseudobulks, n_cells_per_pseudobulk),
             replace=True,
         )
-        x_pseudobulk_ = x_[pseudobulk_indices, :].mean(axis=1)
+        if self.pseudo_bulk_aggregation == "mean":
+            x_pseudobulk_ = x_[pseudobulk_indices, :].mean(axis=1)
+        elif self.pseudo_bulk_aggregation == "sum":
+            x_pseudobulk_ = x_[pseudobulk_indices, :].sum(axis=1)
+        else:
+            raise ValueError(
+                f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
+            )
         y_pseudobulk = y[pseudobulk_indices, :].squeeze(axis=2)
 
         all_proportions = compute_ground_truth_proportions(
             y_pseudobulk, self.n_labels, n_cells_per_pseudobulk
         )
-        counts, x_signature_mask, x_signature_ = compute_signature(y, x_)
+        counts, x_signature_mask, x_signature_ = compute_signature(
+            y, x_, self.pseudo_bulk_aggregation
+        )
 
         # library size
         if self.use_observed_lib_size:
@@ -742,9 +753,18 @@ class MixUpVAE(VAE):
         if self.mixup_penalty == "l2":
             # l2 penalty between mean(cells) and pseudobulk
             if self.loss_computation == "latent_space":
-                mean_single_cells = inference_outputs["z"][pseudobulk_indices, :].mean(
-                    axis=1
-                )
+                if self.pseudo_bulk_aggregation == "mean":
+                    mean_single_cells = inference_outputs["z"][pseudobulk_indices, :].mean(
+                        axis=1
+                    )
+                elif self.pseudo_bulk_aggregation == "sum":
+                    mean_single_cells = inference_outputs["z"][pseudobulk_indices, :].sum(
+                        axis=1
+                    )
+                else:
+                    raise ValueError(
+                        f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
+                    )
                 pseudobulk = inference_outputs["z_pseudobulk"]
             elif self.loss_computation == "reconstructed_space":
                 message = (
@@ -757,16 +777,36 @@ class MixUpVAE(VAE):
                     logger.warn(message)
                     self.logger_messages.add(message)
                 if self.gene_likelihood in ("zinb", "nb"):
-                    mean_single_cells = (
-                        generative_outputs["px"].mu[pseudobulk_indices, :].mean(axis=1)
-                    )
+                    if self.pseudo_bulk_aggregation == "mean":
+                        mean_single_cells = (
+                            generative_outputs["px"].mu[pseudobulk_indices, :].mean(axis=1)
+                        )
+                    elif self.pseudo_bulk_aggregation == "sum":
+                        mean_single_cells = (
+                            generative_outputs["px"].mu[pseudobulk_indices, :].sum(axis=1)
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
+                        )
                     pseudobulk = generative_outputs["px_pseudobulk"].mu
                 elif self.gene_likelihood == "poisson":
-                    mean_single_cells = (
-                        generative_outputs["px"]
-                        .rate[pseudobulk_indices, :]
-                        .mean(axis=1)
-                    )
+                    if self.pseudo_bulk_aggregation == "mean":
+                        mean_single_cells = (
+                            generative_outputs["px"]
+                            .rate[pseudobulk_indices, :]
+                            .mean(axis=1)
+                        )
+                    elif self.pseudo_bulk_aggregation == "sum":
+                        mean_single_cells = (
+                            generative_outputs["px"]
+                            .rate[pseudobulk_indices, :]
+                            .sum(axis=1)
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
+                        )
                     pseudobulk = generative_outputs["px_pseudobulk"].rate
             mixup_penalty = torch.sum((pseudobulk - mean_single_cells) ** 2, axis=1)
         elif self.mixup_penalty == "kl":
