@@ -17,6 +17,7 @@ from .deconv_methods import (
     DestVIMethod,
     MixUpVIMethod,
     NNLSMethod,
+    PCAMethod,
     PCA_NNLSMethod,
     ScadenMethod,
     TAPEMethod,

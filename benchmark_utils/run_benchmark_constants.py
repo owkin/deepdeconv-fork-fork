@@ -85,7 +85,7 @@ DECONV_METHODS = {
     "MixUpVI": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
-        "model_path": "",
+        "model_path": "project/mixupvi_highest_r2_genes_3rd_gran",
         "cell_type_group": "cell_types_grouped",
         "save_model": True,
     },
@@ -93,6 +93,12 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.NNLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+    },
+    "PCA": {
+        "_target_": "benchmark_utils.PCAMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "n_components": 100,
     },
     "PCA_NNLS": {
         "_target_": "benchmark_utils.PCA_NNLSMethod",
@@ -161,7 +167,7 @@ N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
 TRAIN_DATASETS = {"CTI"}
 SINGLE_CELL_DATASETS = {"TOY", "CTI"}
 MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI", "PCA_NNLS"}
-SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden"}
+SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden", "PCA"}
 SINGLE_CELL_GRANULARITIES = {
     "1st_level_granularity",
     "2nd_level_granularity",
@@ -202,6 +208,7 @@ DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
     "TAPE": "adata_pseudobulk_test_rc",
     "Scaden": "adata_pseudobulk_test_rc",
     "PCA_NNLS": "adata_pseudobulk_test_rc",
+    "PCA": "adata_pseudobulk_test_rc",
     "MixUpVI": "adata_pseudobulk_test_counts",
     "scVI": "adata_pseudobulk_test_counts",
     "DestVI": "adata_pseudobulk_test_counts",
