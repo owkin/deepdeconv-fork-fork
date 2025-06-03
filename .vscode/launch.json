@@ -11,6 +11,15 @@
             "program": "${file}",
             "justMyCode": false,
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python Debugger: run_benchmark.py with config_test.yaml",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_benchmark.py",
+            "args": ["--config", "benchmark_configs/config_test.yaml"],
+            "justMyCode": false,
+            "console": "integratedTerminal"
         }
     ]
 }
