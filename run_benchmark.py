@@ -13,6 +13,7 @@ from benchmark_utils import (
     SINGLE_CELL_DATASETS,
     add_cell_types_grouped,
     compute_benchmark_correlations,
+    compute_benchmark_errors,
     create_signature,
     initialize_deconv_methods,
     launch_evaluation_pseudobulk_samplings,
@@ -20,7 +21,6 @@ from benchmark_utils import (
     plot_benchmark_correlations,
     plot_benchmark_errors,
     save_deconvolution_results,
-    compute_benchmark_errors,
 )
 from run_benchmark_config_dataclass import RunBenchmarkConfig
 
@@ -196,8 +196,8 @@ def run_benchmark(
         all_data["deconv_results"], error_type="root_mean_squared_error"
     )
     df_mae_error = compute_benchmark_errors(
-            all_data["deconv_results"], error_type="mean_absolute_error"
-        )
+        all_data["deconv_results"], error_type="mean_absolute_error"
+    )
     df_mape_error = compute_benchmark_errors(
         all_data["deconv_results"], error_type="mean_absolute_percentage_error"
     )
@@ -208,17 +208,25 @@ def run_benchmark(
         all_data["deconv_results"], error_type="cell_type_wise_mean_absolute_error"
     )
     df_group_mape_error = compute_benchmark_errors(
-        all_data["deconv_results"], error_type="cell_type_wise_mean_absolute_percentage_error"
+        all_data["deconv_results"],
+        error_type="cell_type_wise_mean_absolute_percentage_error",
     )
 
     df_all_errors = pd.concat(
-        [df_rmse_error, df_mae_error, df_mape_error, df_group_rmse_error, df_group_mae_error, df_group_mape_error], ignore_index=True
+        [
+            df_rmse_error,
+            df_mae_error,
+            df_mape_error,
+            df_group_rmse_error,
+            df_group_mae_error,
+            df_group_mape_error,
+        ],
+        ignore_index=True,
     )
     if save:
         df_all_errors.to_csv(experiment_name + "/df_all_errors.csv")
         logger.debug(f"Saved error results in {experiment_name}/df_all_errors.csv")
-    
-    
+
     # Basic plotting
     plot_benchmark_correlations(df_all_correlations, save_path=experiment_name)
     logger.debug("Saved correlation plots.")

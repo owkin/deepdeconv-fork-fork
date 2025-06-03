@@ -4,21 +4,12 @@ from .correlation_utils import (
     compute_correlations,
     compute_group_correlations,
 )
-from .error_utils import (
-    compute_benchmark_errors,
-    compute_rmse,
-    compute_mae,
-    compute_mape,
-    compute_group_rmse,
-    compute_group_mae,
-    compute_group_mape,
-)
 from .deconv_methods import (
     DestVIMethod,
     MixUpVIMethod,
     NNLSMethod,
-    PCAMethod,
     PCA_NNLSMethod,
+    PCAMethod,
     ScadenMethod,
     TAPEMethod,
     scVIMethod,
@@ -27,6 +18,15 @@ from .deconv_utils import (
     initialize_deconv_methods,
     save_deconvolution_results,
     use_nnls_method,
+)
+from .error_utils import (
+    compute_benchmark_errors,
+    compute_group_mae,
+    compute_group_mape,
+    compute_group_rmse,
+    compute_mae,
+    compute_mape,
+    compute_rmse,
 )
 from .latent_signature_utils import create_latent_signature
 from .load_dataset_utils import (
@@ -38,6 +38,7 @@ from .load_dataset_utils import (
 from .plotting_utils import (
     compare_tuning_results,
     plot_benchmark_correlations,
+    plot_benchmark_errors,
     plot_deconv_lineplot,
     plot_deconv_results,
     plot_deconv_results_group,
@@ -49,7 +50,6 @@ from .plotting_utils import (
     plot_pearson_random,
     plot_purified_deconv_results,
     plot_reconstruction_loss,
-    plot_benchmark_errors,
 )
 from .process_dataset_utils import (
     add_cell_types_grouped,

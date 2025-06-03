@@ -7,9 +7,9 @@ from abc import abstractmethod
 import anndata as ad
 import pandas as pd
 from loguru import logger
+from sklearn.decomposition import PCA
 from TAPE import Deconvolution
 from TAPE.deconvolution import ScadenDeconvolution
-from sklearn.decomposition import PCA
 
 from .deconv_utils import use_nnls_method
 from .latent_signature_utils import create_latent_signature, create_latent_signature_pca
@@ -66,11 +66,17 @@ class NNLSMethod(AbstractDeconvolutionMethod):
         deconvolution_results = use_nnls_method(to_deconvolve, self.signature_matrix)
 
         return deconvolution_results
-    
+
+
 class PCAMethod(AbstractDeconvolutionMethod):
     """PCA deconvolution method. Here the latent signature is created from the PCA of the signature matrix given."""
 
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame, n_components: int = 100):
+    def __init__(
+        self,
+        signature_matrix_name: str,
+        signature_matrix: pd.DataFrame,
+        n_components: int = 100,
+    ):
         self.signature_matrix_name = signature_matrix_name
         self.signature_matrix = signature_matrix
         self.pca = PCA(n_components=n_components)
@@ -90,19 +96,23 @@ class PCAMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
-        gene_intersection = self.signature_matrix.index.intersection(to_deconvolve.index)
+
+        gene_intersection = self.signature_matrix.index.intersection(
+            to_deconvolve.index
+        )
         to_deconvolve = to_deconvolve.loc[gene_intersection]
         self.signature_matrix = self.signature_matrix.loc[gene_intersection]
 
         latent_adata = self.pca.fit_transform(to_deconvolve.T)
         latent_signature = self.pca.transform(self.signature_matrix.T)
         latent_adata = pd.DataFrame(latent_adata.T, columns=to_deconvolve.columns)
-        latent_signature = pd.DataFrame(latent_signature.T, columns=self.signature_matrix.columns)
+        latent_signature = pd.DataFrame(
+            latent_signature.T, columns=self.signature_matrix.columns
+        )
         deconvolution_results = use_nnls_method(latent_adata, latent_signature)
         return deconvolution_results
 
-    
+
 class PCA_NNLSMethod(AbstractDeconvolutionMethod):
     """PCA + NNLS deconvolution method."""
 
@@ -136,12 +146,13 @@ class PCA_NNLSMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
+
         latent_adata = self.pca.transform(to_deconvolve.X)
-        latent_adata = pd.DataFrame(latent_adata, index=obs_names, columns=self.latent_signature.index).T
+        latent_adata = pd.DataFrame(
+            latent_adata, index=obs_names, columns=self.latent_signature.index
+        ).T
         deconvolution_results = use_nnls_method(latent_adata, self.latent_signature)
         return deconvolution_results
-
 
 
 class MixUpVIMethod(AbstractDeconvolutionMethod):

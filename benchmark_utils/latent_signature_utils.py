@@ -6,12 +6,12 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 import torch
+from sklearn.decomposition import PCA
 
 import scvi
 from constants import SIGNATURE_TYPE
 
 from .pseudobulk_dataset_utils import create_anndata_pseudobulk
-from sklearn.decomposition import PCA
 
 
 def create_latent_signature(
@@ -84,12 +84,12 @@ def create_latent_signature(
     cell_type_list = []
     representation_list: list[np.ndarray] = []
     repeat_list = []
-    
+
     # Determine aggregation method based on model's attribute if available
     aggregation_method = "mean"
     if model is not None and hasattr(model.module, "pseudo_bulk_aggregation"):
         aggregation_method = model.module.pseudo_bulk_aggregation
-    
+
     with torch.no_grad():
         for cell_type in adata.obs[cell_type_column].unique():
             for repeat in range(repeats):
@@ -125,11 +125,15 @@ def create_latent_signature(
                         # Use appropriate aggregation method based on the model's configuration
                         if aggregation_method == "sum":
                             pseudobulk = (
-                                adata_sampled.layers[count_key].sum(axis=0).reshape(1, -1)
+                                adata_sampled.layers[count_key]
+                                .sum(axis=0)
+                                .reshape(1, -1)
                             )
                         else:  # default to mean
                             pseudobulk = (
-                                adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
+                                adata_sampled.layers[count_key]
+                                .mean(axis=0)
+                                .reshape(1, -1)
                             )
                         adata_sampled = create_anndata_pseudobulk(
                             adata_sampled.obs, adata_sampled.var_names, pseudobulk
@@ -165,11 +169,10 @@ def create_latent_signature_pca(
     representation_key: Optional[str] = "X_scvi",
 ) -> ad.AnnData:
     """Create a latent signature from a single cell dataset using PCA."""
-
     cell_type_list = []
     representation_list: list[np.ndarray] = []
     repeat_list = []
-    
+
     for cell_type in adata.obs[cell_type_column].unique():
         for repeat in range(repeats):
             # Sample cells
@@ -182,15 +185,13 @@ def create_latent_signature_pca(
                     n=sc_per_pseudobulk, random_state=seed, replace=True
                 ).index
                 adata_sampled = adata[sampled_cells]
-            
+
             if SIGNATURE_TYPE == "pre_encoded":
-                pseudobulk = (
-                    adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
-                )
+                pseudobulk = adata_sampled.layers[count_key].mean(axis=0).reshape(1, -1)
                 adata_sampled = create_anndata_pseudobulk(
                     adata_sampled.obs, adata_sampled.var_names, pseudobulk
                 )
-            
+
             result = model.transform(adata_sampled.X.toarray())
 
             if SIGNATURE_TYPE == "pre_encoded":

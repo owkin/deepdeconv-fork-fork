@@ -182,7 +182,7 @@ def load_bulk_facs_tpm(**kwargs) -> dict:
             "/home/owkin/project/bulk_facs/gene_counts20230103_batch1-5_all_cleaned-TPMnorm-allpatients.tsv"
         ),
         index_col=0,
-        sep="\t"
+        sep="\t",
     ).T
     common_samples = pd.read_csv(
         "/home/owkin/project/bulk_facs/RNA-FACS_common-samples.csv", index_col=0

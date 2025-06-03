@@ -307,16 +307,12 @@ def create_dirichlet_pseudobulk_dataset(
             # If sample larger than cell population, sample with replacement
             if posterior_dirichlet[i][j] > cell_types[cell_type]:
                 cell_sample = random.choices(
-                    list(
-                        adata.obs.loc[adata.obs[cell_type_group] == cell_type].index
-                    ),
+                    list(adata.obs.loc[adata.obs[cell_type_group] == cell_type].index),
                     k=posterior_dirichlet[i][j],
                 )
             else:
                 cell_sample = random.sample(
-                    list(
-                        adata.obs.loc[adata.obs[cell_type_group] == cell_type].index
-                    ),
+                    list(adata.obs.loc[adata.obs[cell_type_group] == cell_type].index),
                     posterior_dirichlet[i][j],
                 )
             sample_data.extend(cell_sample)
@@ -332,7 +328,9 @@ def create_dirichlet_pseudobulk_dataset(
             averaged_data["counts"].append(X)
         # TODO: For now, we remove the possibility to aggregate by sum, as all_adata_samples would not be affected
         elif aggregation_method == "sum":
-            averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0])
+            averaged_data["relative_counts"].append(
+                adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0]
+            )
             X = np.array(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
             # if add_sparsity:
             #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
@@ -367,6 +365,7 @@ def create_dirichlet_pseudobulk_dataset(
     }
     return pseudobulks
 
+
 def create_purified_50_50_pseudobulk_dataset(
     adata,
     cell_type_1,
@@ -389,7 +388,8 @@ def create_purified_50_50_pseudobulk_dataset(
         aggregation_method: Method to aggregate cells, either "mean" or "sum"
         random_state: Random state for reproducibility
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - all_adata_samples_test: List of AnnData objects for each pseudobulk sample
             - adata_pseudobulk_test_counts: AnnData with raw counts
@@ -416,9 +416,13 @@ def create_purified_50_50_pseudobulk_dataset(
 
     for _ in range(n_sample):
         # Sample cells for each type
-        sample1 = cells_type1[np.random.choice(cells_type1.n_obs, cells_per_type, replace=False)]
-        sample2 = cells_type2[np.random.choice(cells_type2.n_obs, cells_per_type, replace=False)]
-        
+        sample1 = cells_type1[
+            np.random.choice(cells_type1.n_obs, cells_per_type, replace=False)
+        ]
+        sample2 = cells_type2[
+            np.random.choice(cells_type2.n_obs, cells_per_type, replace=False)
+        ]
+
         # Combine samples
         adata_sample = adata.concatenate(sample1, sample2)
         all_adata_samples.append(adata_sample)
@@ -465,4 +469,3 @@ def create_purified_50_50_pseudobulk_dataset(
         "df_proportions_test": groundtruth_fractions,
     }
     return pseudobulks
-

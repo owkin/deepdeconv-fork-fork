@@ -56,7 +56,7 @@ ERROR_FUNCTIONS = {
         "deconv_results": None,
         "ground_truth_fractions": None,
     },
-    "cell_type_wise_mean_absolute_error": { 
+    "cell_type_wise_mean_absolute_error": {
         "_target_": "benchmark_utils.compute_group_mae",
         "deconv_results": None,
         "ground_truth_fractions": None,

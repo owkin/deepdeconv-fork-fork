@@ -113,9 +113,7 @@ def compute_signature(y, x_, pseudo_bulk_aggregation):
     elif pseudo_bulk_aggregation == "sum":
         x_signature_ = torch.matmul(x_signature_mask, x_)
     else:
-        raise ValueError(
-            f"Unknown pseudo_bulk_aggregation: {pseudo_bulk_aggregation}"
-        )
+        raise ValueError(f"Unknown pseudo_bulk_aggregation: {pseudo_bulk_aggregation}")
     return counts, x_signature_mask, x_signature_
 
 

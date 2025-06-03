@@ -754,13 +754,13 @@ class MixUpVAE(VAE):
             # l2 penalty between mean(cells) and pseudobulk
             if self.loss_computation == "latent_space":
                 if self.pseudo_bulk_aggregation == "mean":
-                    mean_single_cells = inference_outputs["z"][pseudobulk_indices, :].mean(
-                        axis=1
-                    )
+                    mean_single_cells = inference_outputs["z"][
+                        pseudobulk_indices, :
+                    ].mean(axis=1)
                 elif self.pseudo_bulk_aggregation == "sum":
-                    mean_single_cells = inference_outputs["z"][pseudobulk_indices, :].sum(
-                        axis=1
-                    )
+                    mean_single_cells = inference_outputs["z"][
+                        pseudobulk_indices, :
+                    ].sum(axis=1)
                 else:
                     raise ValueError(
                         f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
@@ -779,11 +779,15 @@ class MixUpVAE(VAE):
                 if self.gene_likelihood in ("zinb", "nb"):
                     if self.pseudo_bulk_aggregation == "mean":
                         mean_single_cells = (
-                            generative_outputs["px"].mu[pseudobulk_indices, :].mean(axis=1)
+                            generative_outputs["px"]
+                            .mu[pseudobulk_indices, :]
+                            .mean(axis=1)
                         )
                     elif self.pseudo_bulk_aggregation == "sum":
                         mean_single_cells = (
-                            generative_outputs["px"].mu[pseudobulk_indices, :].sum(axis=1)
+                            generative_outputs["px"]
+                            .mu[pseudobulk_indices, :]
+                            .sum(axis=1)
                         )
                     else:
                         raise ValueError(

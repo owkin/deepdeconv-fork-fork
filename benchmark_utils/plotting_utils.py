@@ -72,9 +72,7 @@ def plot_benchmark_errors(df_all_errors, save_path: str = "", save: bool = True)
     }
 
     for granularity in df_all_errors.granularity.unique():
-        df_all_errors_temp = df_all_errors[
-            df_all_errors["granularity"] == granularity
-        ]
+        df_all_errors_temp = df_all_errors[df_all_errors["granularity"] == granularity]
         if (
             "num_cells" in df_all_errors_temp.columns
             and df_all_errors_temp.num_cells.dropna().nunique() > 1
@@ -405,9 +403,12 @@ def compare_tuning_results(
 
 
 def plot_root_mean_squared_error(errors, save=False, save_path="", filename=""):
+    """Plot the root mean squared error boxplot."""
     if filename == "":
         granularity = errors["granularity"].unique()[0]
-        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors.columns and isinstance(
+            errors["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_rmse_boxplot"
         else:
@@ -419,7 +420,10 @@ def plot_root_mean_squared_error(errors, save=False, save_path="", filename=""):
     plt.xticks(rotation=90)
     x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
     medians = (
-        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+        errors.groupby("deconv_method")["errors"]
+        .median()
+        .reindex(x_categories)
+        .round(4)
     )
     y_range = errors["errors"].max() - errors["errors"].min()
     vertical_offset = y_range * 0.0005
@@ -441,9 +445,12 @@ def plot_root_mean_squared_error(errors, save=False, save_path="", filename=""):
 
 
 def plot_mean_absolute_error(errors, save=False, save_path="", filename=""):
+    """Plot the mean absolute error boxplot."""
     if filename == "":
         granularity = errors["granularity"].unique()[0]
-        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors.columns and isinstance(
+            errors["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_mae_boxplot"
         else:
@@ -455,7 +462,10 @@ def plot_mean_absolute_error(errors, save=False, save_path="", filename=""):
     plt.xticks(rotation=90)
     x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
     medians = (
-        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+        errors.groupby("deconv_method")["errors"]
+        .median()
+        .reindex(x_categories)
+        .round(4)
     )
     y_range = errors["errors"].max() - errors["errors"].min()
     vertical_offset = y_range * 0.0005
@@ -477,9 +487,12 @@ def plot_mean_absolute_error(errors, save=False, save_path="", filename=""):
 
 
 def plot_mean_absolute_percentage_error(errors, save=False, save_path="", filename=""):
+    """Plot the mean absolute percentage error boxplot."""
     if filename == "":
         granularity = errors["granularity"].unique()[0]
-        if "sampling_method" in errors.columns and isinstance(errors["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors.columns and isinstance(
+            errors["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_mape_boxplot"
         else:
@@ -491,7 +504,10 @@ def plot_mean_absolute_percentage_error(errors, save=False, save_path="", filena
     plt.xticks(rotation=90)
     x_categories = [t.get_text() for t in boxplot.get_xticklabels()]
     medians = (
-        errors.groupby("deconv_method")["errors"].median().reindex(x_categories).round(4)
+        errors.groupby("deconv_method")["errors"]
+        .median()
+        .reindex(x_categories)
+        .round(4)
     )
     y_range = errors["errors"].max() - errors["errors"].min()
     vertical_offset = y_range * 0.0005
@@ -512,10 +528,15 @@ def plot_mean_absolute_percentage_error(errors, save=False, save_path="", filena
         plt.savefig(f"{save_path}/{filename}.png", dpi=300)
 
 
-def plot_cell_type_wise_root_mean_squared_error(errors_group, save=False, save_path="", filename=""):
+def plot_cell_type_wise_root_mean_squared_error(
+    errors_group, save=False, save_path="", filename=""
+):
+    """Plot the cell type wise root mean squared error barplot."""
     if filename == "":
         granularity = errors_group["granularity"].unique()[0]
-        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors_group.columns and isinstance(
+            errors_group["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors_group["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_cell_type_rmse_plot"
         else:
@@ -535,10 +556,15 @@ def plot_cell_type_wise_root_mean_squared_error(errors_group, save=False, save_p
         plt.savefig(f"{save_path}/{filename}.png", dpi=300)
 
 
-def plot_cell_type_wise_mean_absolute_error(errors_group, save=False, save_path="", filename=""):
+def plot_cell_type_wise_mean_absolute_error(
+    errors_group, save=False, save_path="", filename=""
+):
+    """Plot the cell type wise mean absolute error barplot."""
     if filename == "":
         granularity = errors_group["granularity"].unique()[0]
-        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors_group.columns and isinstance(
+            errors_group["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors_group["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_cell_type_mae_plot"
         else:
@@ -558,10 +584,15 @@ def plot_cell_type_wise_mean_absolute_error(errors_group, save=False, save_path=
         plt.savefig(f"{save_path}/{filename}.png", dpi=300)
 
 
-def plot_cell_type_wise_mean_absolute_percentage_error(errors_group, save=False, save_path="", filename=""):
+def plot_cell_type_wise_mean_absolute_percentage_error(
+    errors_group, save=False, save_path="", filename=""
+):
+    """Plot the cell type wise mean absolute percentage error barplot."""
     if filename == "":
         granularity = errors_group["granularity"].unique()[0]
-        if "sampling_method" in errors_group.columns and isinstance(errors_group["sampling_method"].unique()[0], str):
+        if "sampling_method" in errors_group.columns and isinstance(
+            errors_group["sampling_method"].unique()[0], str
+        ):
             sampling_method = errors_group["sampling_method"].unique()[0]
             filename = f"{granularity}_{sampling_method}_sampling_cell_type_mape_plot"
         else:
