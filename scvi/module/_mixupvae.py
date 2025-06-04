@@ -204,6 +204,7 @@ class MixUpVAE(VAE):
             )
 
         self.n_pseudobulks = n_pseudobulks
+        self.add_noise = False
         self.n_cells_per_pseudobulk = n_cells_per_pseudobulk
         self.signature_type = signature_type
         self.loss_computation = loss_computation
@@ -321,6 +322,8 @@ class MixUpVAE(VAE):
         )
         if self.pseudo_bulk_aggregation == "mean":
             x_pseudobulk_ = x_[pseudobulk_indices, :].mean(axis=1)
+            if self.add_noise: # add noise to the pseudobulk (this is just for the debugger)
+                x_pseudobulk_ = x_pseudobulk_ + torch.randn_like(x_pseudobulk_) * 0.01
         elif self.pseudo_bulk_aggregation == "sum":
             x_pseudobulk_ = x_[pseudobulk_indices, :].sum(axis=1)
         else:
