@@ -228,7 +228,7 @@ class MixUpDataSplitter(DataSplitter):
         indices = np.arange(self.adata_manager.adata.n_obs)
 
         random_state = np.random.RandomState(
-            seed=42
+            seed=None
         )  # settings.seed is None so new random state for each run
         if self.shuffle_set_split:
             indices = random_state.permutation(indices)
@@ -278,6 +278,7 @@ class MixUpDataSplitter(DataSplitter):
             new_training_indices = []
             max_cells_per_cell_type = adata_obs_train[cell_type_key].value_counts()
             for i in range(n_batch + 1):
+                batch_indices = []
                 for j, cell_type in enumerate(likelihood_alphas.index):
                     replace = False
                     n_additional_cells_to_sample = 0
@@ -310,9 +311,11 @@ class MixUpDataSplitter(DataSplitter):
                         n_additional_cells_to_sample,
                         replace=False,
                     ).tolist()
-                    new_training_indices.extend(
+                    batch_indices.extend(
                         indices_cell_sample + additional_indices_cell_sample
                     )
+                random_state.shuffle(batch_indices)
+                new_training_indices.extend(batch_indices)
 
             self.train_idx = new_training_indices  # new length will be +/- 5 cells different from the original self.train_idx
 

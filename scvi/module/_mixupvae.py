@@ -314,7 +314,7 @@ class MixUpVAE(VAE):
             n_cells_per_pseudobulk = x_.shape[0]
         else:
             n_cells_per_pseudobulk = self.n_cells_per_pseudobulk
-        random_state = np.random.RandomState(seed=42)
+        random_state = np.random.RandomState(seed=None)
         pseudobulk_indices = random_state.choice(
             x_.shape[0],
             size=(self.n_pseudobulks, n_cells_per_pseudobulk),
@@ -322,8 +322,9 @@ class MixUpVAE(VAE):
         )
         if self.pseudo_bulk_aggregation == "mean":
             x_pseudobulk_ = x_[pseudobulk_indices, :].mean(axis=1)
-            if self.add_noise: # add noise to the pseudobulk (this is just for the debugger)
-                x_pseudobulk_ = x_pseudobulk_ + torch.randn_like(x_pseudobulk_) * 0.01
+            # if self.add_noise: # add noise to the pseudobulk (this is just for the debugger)
+            #     x_pseudobulk_ = x_pseudobulk_ + x_pseudobulk_ * torch.randn_like(x_pseudobulk_) * 0.1
+            #     x_pseudobulk_ = torch.clamp(x_pseudobulk_, min=0)
         elif self.pseudo_bulk_aggregation == "sum":
             x_pseudobulk_ = x_[pseudobulk_indices, :].sum(axis=1)
         else:
