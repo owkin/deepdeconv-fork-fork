@@ -85,14 +85,15 @@ DECONV_METHODS = {
     "MixUpVI": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
-        "model_path": "project/mixupvi_highest_r2_genes_3rd_gran",
+        "model_path": " ",
         "cell_type_group": "cell_types_grouped",
         "save_model": True,
     },
+    # I created this to compare two different version of the MixUpVI method in the benchmark
     "MixUpVI_noise": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
-        "model_path": "project/mixupvi_highest_r2_genes_3rd_gran_noised",
+        "model_path": " ",
         "cell_type_group": "cell_types_grouped",
         "save_model": True,
     },
