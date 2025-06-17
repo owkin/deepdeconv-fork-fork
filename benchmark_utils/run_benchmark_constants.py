@@ -90,7 +90,7 @@ DECONV_METHODS = {
         "save_model": True,
     },
     # I created this to compare two different version of the MixUpVI method in the benchmark
-    "MixUpVI_noise": {
+    "MixUpVI_extra": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
         "model_path": " ",
@@ -174,7 +174,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
 N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
 TRAIN_DATASETS = {"CTI"}
 SINGLE_CELL_DATASETS = {"TOY", "CTI"}
-MODEL_TO_FIT = {"MixUpVI", "MixUpVI_noise", "scVI", "DestVI", "PCA_NNLS"}
+MODEL_TO_FIT = {"MixUpVI", "MixUpVI_extra", "scVI", "DestVI", "PCA_NNLS"}
 SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden", "PCA"}
 SINGLE_CELL_GRANULARITIES = {
     "1st_level_granularity",
@@ -218,7 +218,7 @@ DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
     "PCA_NNLS": "adata_pseudobulk_test_rc",
     "PCA": "adata_pseudobulk_test_rc",
     "MixUpVI": "adata_pseudobulk_test_counts",
-    "MixUpVI_noise": "adata_pseudobulk_test_counts",
+    "MixUpVI_extra": "adata_pseudobulk_test_counts",
     "scVI": "adata_pseudobulk_test_counts",
     "DestVI": "adata_pseudobulk_test_counts",
 }
