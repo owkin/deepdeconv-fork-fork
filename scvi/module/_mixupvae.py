@@ -2,6 +2,7 @@
 import copy
 import logging
 from typing import Callable, Iterable, Literal, Optional
+import csv
 
 import numpy as np
 import torch
@@ -306,36 +307,93 @@ class MixUpVAE(VAE):
         """
         x_ = x
 
-        # create self.n_pseudobulks
+        # create self.n_pseudobulks with variable number of cells
         if (
             self.n_cells_per_pseudobulk is None
             or self.n_cells_per_pseudobulk > x_.shape[0]
         ):
-            n_cells_per_pseudobulk = x_.shape[0]
+            max_cells = x_.shape[0]
         else:
-            n_cells_per_pseudobulk = self.n_cells_per_pseudobulk
+            max_cells = min(self.n_cells_per_pseudobulk, x_.shape[0])
+        
+        # Generate powers of 2 between 64 and max_cells
+        min_cells = 64
+        if max_cells < min_cells:
+            # If we have fewer cells than 64, just use all available cells
+            possible_n_cells = [max_cells]
+        else:
+            possible_n_cells = []
+            power = 6  # 2^6 = 64
+            while 2**power <= max_cells:
+                possible_n_cells.append(2**power)
+                power += 1
+        
         random_state = np.random.RandomState(seed=None)
-        pseudobulk_indices = random_state.choice(
-            x_.shape[0],
-            size=(self.n_pseudobulks, n_cells_per_pseudobulk),
-            replace=True,
-        )
-        if self.pseudo_bulk_aggregation == "mean":
-            x_pseudobulk_ = x_[pseudobulk_indices, :].mean(axis=1)
-            # if self.add_noise: # add noise to the pseudobulk (this is just for the debugger)
-            #     x_pseudobulk_ = x_pseudobulk_ + x_pseudobulk_ * torch.randn_like(x_pseudobulk_) * 0.1
-            #     x_pseudobulk_ = torch.clamp(x_pseudobulk_, min=0)
-        elif self.pseudo_bulk_aggregation == "sum":
-            x_pseudobulk_ = x_[pseudobulk_indices, :].sum(axis=1)
-        else:
-            raise ValueError(
-                f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}"
+        
+        # Sample variable number of cells for each pseudobulk and create indices
+        n_cells_per_pseudobulk_list = []
+        max_n_cells = 0
+        pseudobulk_indices_list = []
+        
+        for _ in range(self.n_pseudobulks):
+            n_cells_this_pseudobulk = random_state.choice(possible_n_cells)
+            n_cells_per_pseudobulk_list.append(n_cells_this_pseudobulk)
+            max_n_cells = max(max_n_cells, n_cells_this_pseudobulk)
+            indices = random_state.choice(
+                x_.shape[0], 
+                size=n_cells_this_pseudobulk, 
+                replace=True
             )
-        y_pseudobulk = y[pseudobulk_indices, :].squeeze(axis=2)
+            pseudobulk_indices_list.append(indices)
+        
+        # Create pseudobulk_indices matrix (padded) for compatibility with existing code
+        pseudobulk_indices = np.full((self.n_pseudobulks, max_n_cells), 0, dtype=int)
+        for i, indices in enumerate(pseudobulk_indices_list):
+            pseudobulk_indices[i, :len(indices)] = indices
+            # Pad with the last index to avoid issues with indexing
+            if len(indices) < max_n_cells:
+                pseudobulk_indices[i, len(indices):] = indices[-1]
+        
+        # Create pseudobulks by aggregating the variable number of cells
+        if self.pseudo_bulk_aggregation == "mean":
+            x_pseudobulk_ = torch.stack([x_[indices, :].mean(axis=0) for indices in pseudobulk_indices_list])
+        elif self.pseudo_bulk_aggregation == "sum":
+            x_pseudobulk_ = torch.stack([x_[indices, :].sum(axis=0) for indices in pseudobulk_indices_list])
+        else:
+            raise ValueError(f"Unknown pseudo_bulk_aggregation: {self.pseudo_bulk_aggregation}")
+        
+        y_pseudobulk = [y[indices, :].squeeze() for indices in pseudobulk_indices_list]
+        
+        # Store the actual number of cells per pseudobulk for ground truth proportion calculation
+        self._n_cells_per_pseudobulk_actual = n_cells_per_pseudobulk_list
 
-        all_proportions = compute_ground_truth_proportions(
-            y_pseudobulk, self.n_labels, n_cells_per_pseudobulk
-        )
+        # Compute ground truth proportions for each pseudobulk with its actual cell count
+        all_proportions = []
+        for i, y_pb in enumerate(y_pseudobulk):
+            n_cells_this_pb = n_cells_per_pseudobulk_list[i]
+            unique_indices, counts = y_pb.unique(return_counts=True)
+            if len(counts) < self.n_labels:
+                # then not all labels are present in pseudobulk, but we need to specify these proportions of 0
+                unique_indices = unique_indices.int().tolist()
+                counts = [
+                    counts[unique_indices.index(j)].item() if j in unique_indices else 0
+                    for j in range(self.n_labels)
+                ]
+                counts = torch.tensor(counts).to(device=y_pb.device)
+            proportions = counts.float() / n_cells_this_pb
+            all_proportions.append(proportions)
+        # # Save the ground truth proportions seen during training
+        # # Convert tensors to lists and write to CSV
+        # # Each row represents one pseudobulk's proportions
+        # # Each column represents one label's proportion across pseudobulks
+        # csv_path = "/home/owkin/project/Alessandro/experiments/training_proportions.csv"
+        
+        # # with open(csv_path, 'a', newline='') as f:
+        # #     writer = csv.writer(f)
+        # #     all_proportions_np = torch.stack(all_proportions).cpu().numpy()
+        # #     for proportion_vector in all_proportions_np:
+        # #         writer.writerow(proportion_vector)
+
         counts, x_signature_mask, x_signature_ = compute_signature(
             y, x_, self.pseudo_bulk_aggregation
         )
@@ -505,7 +563,7 @@ class MixUpVAE(VAE):
     ):
         """Runs the generative model."""
         if self.pseudo_bulk == "post_inference":
-            # create it from z by overwritting the one coming from inference
+            # create it from z by overwriting the one coming from inference
             z_pseudobulk = z[pseudobulk_indices, :].mean(axis=1)
 
         if cont_covs is None:
