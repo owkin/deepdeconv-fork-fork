@@ -166,9 +166,14 @@ class MixUpVIMethod(AbstractDeconvolutionMethod):
         save_model: bool = False,
     ):
         """Fit MixUpVI and create the latent signature matrix."""
-        self.filtered_genes = adata_train.var.index[
-            adata_train.var["highly_variable"]
-        ].tolist()
+        # self.filtered_genes = adata_train.var.index[
+        #     adata_train.var["highly_variable"]
+        # ].tolist()
+        
+        import pickle 
+        with open("project/highest_r2_genes_DLBCL_2nd_gran.pkl", "rb") as f:
+            self.filtered_genes = pickle.load(f)
+
         adata_train = adata_train[:, self.filtered_genes]
         self.adata_obs = adata_train.obs
 

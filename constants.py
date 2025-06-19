@@ -2,13 +2,13 @@
 
 ## Constants for run_mixupvi.py
 TUNE_MIXUPVI = False
-TRAINING_DATASET = "CTI"  # ["CTI", "TOY", "CTI_PROCESSED", "CTI_RAW"]
-TRAINING_CELL_TYPE_GROUP = "3rd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
+TRAINING_DATASET = "DLBCL_sc"  # ["CTI", "TOY", "CTI_PROCESSED", "CTI_RAW"]
+TRAINING_CELL_TYPE_GROUP = "DLBCL_2nd_level_granularity"  # ["1st_level_granularity", "2nd_level_granularity", "3rd_level_granularity", "4th_level_granularity", "FACS_1st_level_granularity"]
 N_GENES = 2000  # number of input genes after preprocessing (NOT USED INSIDE BENCHMARK)
 
 ## Constants for both run_mixupvi.py and run_benchmark.py
 # For all VI models
-LATENT_SIZE = 150
+LATENT_SIZE = 30
 MAX_EPOCHS = 100
 SAVE_MODEL = True
 SEED = 3
@@ -21,7 +21,7 @@ if TRAIN_SIZE < 1:
 # MixUpVI model hyperparameters
 N_PSEUDOBULKS = 100
 N_CELLS_PER_PSEUDOBULK = (
-    1024  # None (then will be batch size) or int (will cap at batch size)
+    256  # None (then will be batch size) or int (will cap at batch size)
 )
 N_HIDDEN = 512
 CONT_COV = None  # None or list of continuous covariates to include

@@ -79,13 +79,19 @@ DATASETS = {
     "BULK_FACS": {
         "_target_": "benchmark_utils.load_bulk_facs",
     },
+    "DLBCL_sc": {
+        "_target_": "benchmark_utils.load_dlbcl_sc",
+    },
+    "DLBCL_bulk": {
+        "_target_": "benchmark_utils.load_dlbcl_bulk",
+    },
 }
 
 DECONV_METHODS = {
     "MixUpVI": {
         "_target_": "benchmark_utils.MixUpVIMethod",
         "adata_train": None,
-        "model_path": "project/mixupvi_highest_r2_genes_3rd_gran",
+        "model_path": "project/mixupvi_highest_r2_genes_DLBCL_2nd_gran",
         "cell_type_group": "cell_types_grouped",
         "save_model": True,
     },
@@ -164,8 +170,8 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
 
 
 N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
-TRAIN_DATASETS = {"CTI"}
-SINGLE_CELL_DATASETS = {"TOY", "CTI"}
+TRAIN_DATASETS = {"CTI", "DLBCL_sc"}
+SINGLE_CELL_DATASETS = {"TOY", "CTI", "DLBCL_sc"}
 MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI", "PCA_NNLS"}
 SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden", "PCA"}
 SINGLE_CELL_GRANULARITIES = {
@@ -173,6 +179,7 @@ SINGLE_CELL_GRANULARITIES = {
     "2nd_level_granularity",
     "3rd_level_granularity",
     "4th_level_granularity",
+    "DLBCL_2nd_level_granularity",
 }
 GRANULARITIES = SINGLE_CELL_GRANULARITIES.union(
     {
@@ -186,6 +193,7 @@ SIGNATURE_TO_GRANULARITY = {
     "CTI_3rd_level_granularity": "3rd_level_granularity",
     "CTI_4th_level_granularity": "4th_level_granularity",
     "FACS_1st_level_granularity": "FACS_1st_level_granularity",
+    "DLBCL_2nd_level_granularity": "DLBCL_2nd_level_granularity",
 }
 GRANULARITY_TO_TRAINING_DATASET = {
     "1st_level_granularity": "CTI",
@@ -193,6 +201,7 @@ GRANULARITY_TO_TRAINING_DATASET = {
     "3rd_level_granularity": "CTI",
     "4th_level_granularity": "CTI",
     "FACS_1st_level_granularity": "CTI",
+    "DLBCL_2nd_level_granularity": "DLBCL_sc",
     # add the one for TOY
 }
 GRANULARITY_TO_EVALUATION_DATASET = {
@@ -201,6 +210,7 @@ GRANULARITY_TO_EVALUATION_DATASET = {
     "3rd_level_granularity": "CTI",
     "4th_level_granularity": "CTI",
     "FACS_1st_level_granularity": "BULK_FACS",
+    "DLBCL_2nd_level_granularity": "DLBCL_bulk",
     # add the one for TOY
 }
 DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {

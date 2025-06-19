@@ -48,6 +48,12 @@ def create_signature(
         signature = read_txt_r_signature(
             "/home/owkin/project/Simon/signature_FACS_1st_level_granularity/FACS_1st_level_granularity_ensg.txt"
         )
+    elif signature_type == "DLBCL_2nd_level_granularity":
+        signature = pd.read_csv(
+            "/home/owkin/project/data/dlbcl_data/signture_matrix_level2_ensg.csv",
+            index_col=0,
+        )
+        signature.index.name = "Genes"
     return signature
 
 

@@ -33,6 +33,8 @@ from .load_dataset_utils import (
     load_bulk_facs,
     load_bulk_facs_tpm,
     load_cti,
+    load_dlbcl_bulk,
+    load_dlbcl_sc,
     load_preprocessed_datasets,
 )
 from .plotting_utils import (
