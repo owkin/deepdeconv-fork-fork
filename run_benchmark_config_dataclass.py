@@ -371,7 +371,7 @@ class RunBenchmarkConfig:
             ):
                 message = (
                     f"The provided granularity {granularity} should be evaluated on "
-                    f"the following dataset: {GRANULARITY_TO_EVALUATION_DATASET['granularity']}."
+                    f"the following dataset: {GRANULARITY_TO_EVALUATION_DATASET[granularity]}."
                     "However, none of the evaluation datasets ("
                     f"{config_dict['evaluation_datasets']}) contain this dataset."
                 )
