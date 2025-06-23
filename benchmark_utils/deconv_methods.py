@@ -174,6 +174,8 @@ class MixUpVIMethod(AbstractDeconvolutionMethod):
         with open("project/highest_r2_genes_DLBCL_2nd_gran.pkl", "rb") as f:
             self.filtered_genes = pickle.load(f)
 
+        logger.warning("Here we are automatically using the highest R2 genes for the 2nd granularity of the DLBCL dataset as input genes for the network.")
+
         adata_train = adata_train[:, self.filtered_genes]
         self.adata_obs = adata_train.obs
 
