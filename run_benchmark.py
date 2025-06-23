@@ -161,7 +161,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     print(args.config)
-    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml")
+    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/split_configs_2nd_level/config_test_100cells.yaml")
     config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
     
     run_benchmark(**config_dict)    

@@ -10,7 +10,7 @@ N_GENES = 4000 # number of input genes after preprocessing (NOT USED INSIDE BENC
 
 ## Constants for both run_mixupvi.py and run_benchmark.py
 # For all VI models
-LATENT_SIZE = 10
+LATENT_SIZE = 30
 MAX_EPOCHS = 100
 SAVE_MODEL = True
 SEED = 3

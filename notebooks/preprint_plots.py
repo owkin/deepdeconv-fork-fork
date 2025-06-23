@@ -19,7 +19,10 @@ dfs = []
 
 # Load and concatenate all dataframes
 for n_cells in cell_numbers:
-    df_path = f"/home/owkin/project/run_benchmark_experiments/preprint_experiments/{granularity}_{n_cells}/df_all_metrics.csv"
+    if n_cells == 100:
+        df_path = f"/home/owkin/project/run_benchmark_experiments/preprint_experiments/{granularity}_{n_cells}/df_all_metrics.csv"
+    else:
+        df_path = f"/home/owkin/project/run_benchmark_experiments/preprint_experiments_v1/{granularity}_{n_cells}/df_all_metrics.csv"
     df = pd.read_csv(df_path)
     dfs.append(df)
 
@@ -84,23 +87,23 @@ for metric in metrics:
     plt.close()
 
 # Generate line plot
-plot_deconv_lineplot(
-    results=df,
-    metric="correlations",
-    save=True,
-    save_path=save_path,
-    filename=f"preprint_baselines_linear_correlations_lineplot"
-)
-plt.close()
+# plot_deconv_lineplot(
+#     results=df,
+#     metric="correlations",
+#     save=True,
+#     save_path=save_path,
+#     filename=f"preprint_baselines_linear_correlations_lineplot"
+# )
+# plt.close()
 
-plot_deconv_results_and_error_metric_subplots(
-    df_corr=df_corr,
-    df_error=df_mse,
-    error_metric="mse",
-    save=True,
-    save_path=save_path,
-    filename=f"preprint_corr_and_mse_boxplot_{n_cells}cells"
-)
+# plot_deconv_results_and_error_metric_subplots(
+#     df_corr=df_corr,
+#     df_error=df_mse,
+#     error_metric="mse",
+#     save=True,
+#     save_path=save_path,
+#     filename=f"preprint_corr_and_mse_boxplot_{n_cells}cells"
+# )
 
 print("All plots have been generated and saved!")
 
