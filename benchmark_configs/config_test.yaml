@@ -1,7 +1,7 @@
 ## A test config to run the benchmark
 
-deconv_methods: ["NNLS", "PCA", "MixUpVI", "PCA_NNLS"] # "TAPE", "Scaden", "scVI", "DestVI"
-evaluation_datasets: ["DLBCL_bulk"]
+deconv_methods: ["NNLS", "MixUpVI"] # "TAPE", "Scaden", "scVI", "DestVI"
+evaluation_datasets: ["DLBCL_sc"]
 granularities: ["DLBCL_2nd_level_granularity"]
 evaluation_pseudobulk_samplings: ["DIRICHLET"] # "UNIFORM", "PURIFIED"
 n_samples_evaluation_pseudobulk: 500
@@ -9,5 +9,5 @@ n_cells_per_evaluation_pseudobulk: [256]
 signature_matrices: ["DLBCL_2nd_level_granularity"]
 train_dataset: "DLBCL_sc"
 n_variable_genes: 2000
-experiment_name: "dlbcl_first_training_sweep" # if None, a random name will be chosen
+experiment_name: "dlbcl_2nd_gran_baseline" # if None, a random name will be chosen
 save: True # if False, only the plots will be saved
