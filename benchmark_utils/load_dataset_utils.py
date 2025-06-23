@@ -109,14 +109,15 @@ def load_cti(n_variable_genes: int, **kwargs) -> dict:
     return data
 
 def load_dlbcl_sc(**kwargs) -> dict:
-    adata = sc.read("/home/owkin/project/data/dlbcl_data/dlbcl_sc_processed.h5ad")
+    adata = sc.read("/home/owkin/project/data/dlbcl_data/processed/dlbcl_sc_processed_v1.h5ad")
     #TODO: Set a keep_genes_parameter here? We already saved the data processed, no need to reprocess it
     #adata = preprocess_scrna(adata, keep_genes=None, batch_key="donor_id")
     data = {"dataset": adata}
     return data
 
 def load_dlbcl_bulk(**kwargs) -> dict:
-    bulk_data = pd.read_csv("/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/filtered_raw_counts.tsv", sep="\t", index_col=0)
+    # here the filtered_raw_counts.tsv contains the raw counts, while the tpm_counts.tsv contains the TPM normalized counts
+    bulk_data = pd.read_csv("/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/tpm_counts.tsv", sep="\t", index_col=0)
     ground_truth_data = pd.read_csv("/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/deconvolution_mcpcounter.tsv", sep = "\t", index_col=0)
     logger.warning("The ground truth data for the Bulk DLBCL dataset is just a dummy dataset, not a real one.")
     #change the label names in the ground truth data as this is just a dummy dataset, not a real one
@@ -133,6 +134,7 @@ def load_dlbcl_bulk(**kwargs) -> dict:
         'Fibroblasts': 'Fibroblast'
     }
     ground_truth_data.rename(signature_to_celltype, axis = 0, inplace=True)
+    ground_truth_data.drop(columns=["Mast"], inplace=True, errors="ignore") # Remove Mast cells from the ground truth data as they are not used in the training dataset
     return {"dataset": bulk_data, "ground_truth": ground_truth_data.T}
 
 def load_bulk_facs(**kwargs) -> dict:
