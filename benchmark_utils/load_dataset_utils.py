@@ -72,7 +72,7 @@ def load_preprocessed_datasets(
         data["datasets"]["BULK_FACS"]["dataset"] = data["datasets"]["BULK_FACS"][
             "dataset"
         ].loc[cti_bulk_genes_intersection]
-    
+
     if "DLBCL_bulk" in evaluation_datasets:
         logger.warning(
             "DLBCL_bulk is provided as one evaluation_dataset, therefore DLBCL_sc will be intersected "
@@ -84,8 +84,12 @@ def load_preprocessed_datasets(
         dlbcl_bulk_sc_genes_intersection = list(
             set(dlbcl_bulk_gene_list).intersection(set(dlbcl_sc_gene_list))
         )
-        data["datasets"]["DLBCL_bulk"]["dataset"] = data["datasets"]["DLBCL_bulk"]["dataset"].loc[dlbcl_bulk_sc_genes_intersection]
-        data["datasets"]["DLBCL_sc"]["dataset"] = data["datasets"]["DLBCL_sc"]["dataset"][:, dlbcl_bulk_sc_genes_intersection]
+        data["datasets"]["DLBCL_bulk"]["dataset"] = data["datasets"]["DLBCL_bulk"][
+            "dataset"
+        ].loc[dlbcl_bulk_sc_genes_intersection]
+        data["datasets"]["DLBCL_sc"]["dataset"] = data["datasets"]["DLBCL_sc"][
+            "dataset"
+        ][:, dlbcl_bulk_sc_genes_intersection]
 
     return data
 
@@ -108,34 +112,53 @@ def load_cti(n_variable_genes: int, **kwargs) -> dict:
     data = {"dataset": adata}
     return data
 
+
 def load_dlbcl_sc(**kwargs) -> dict:
-    adata = sc.read("/home/owkin/project/data/dlbcl_data/processed/dlbcl_sc_processed_v1.h5ad")
-    #TODO: Set a keep_genes_parameter here? We already saved the data processed, no need to reprocess it
-    #adata = preprocess_scrna(adata, keep_genes=None, batch_key="donor_id")
+    """Load and preprocess the DLBCL scRNAseq dataset."""
+    adata = sc.read(
+        "/home/owkin/project/data/dlbcl_data/processed/dlbcl_sc_processed_v1.h5ad"
+    )
+    # TODO: Set a keep_genes_parameter here? We already saved the data processed, no need to reprocess it
+    # adata = preprocess_scrna(adata, keep_genes=None, batch_key="donor_id")
     data = {"dataset": adata}
     return data
 
+
 def load_dlbcl_bulk(**kwargs) -> dict:
+    """Load and preprocess the DLBCL bulk dataset (TPM normalized counts)."""
     # here the filtered_raw_counts.tsv contains the raw counts, while the tpm_counts.tsv contains the TPM normalized counts
-    bulk_data = pd.read_csv("/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/tpm_counts.tsv", sep="\t", index_col=0)
-    ground_truth_data = pd.read_csv("/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/deconvolution_mcpcounter.tsv", sep = "\t", index_col=0)
-    logger.warning("The ground truth data for the Bulk DLBCL dataset is just a dummy dataset, not a real one.")
-    #change the label names in the ground truth data as this is just a dummy dataset, not a real one
+    bulk_data = pd.read_csv(
+        "/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/tpm_counts.tsv",
+        sep="\t",
+        index_col=0,
+    )
+    ground_truth_data = pd.read_csv(
+        "/home/owkin/data/dataset-6253ffa8-7098-4928-8323-21aeb644d19d/deconvolution_mcpcounter.tsv",
+        sep="\t",
+        index_col=0,
+    )
+    logger.warning(
+        "The ground truth data for the Bulk DLBCL dataset is just a dummy dataset, not a real one."
+    )
+    # change the label names in the ground truth data as this is just a dummy dataset, not a real one
     signature_to_celltype = {
-        'T cells': 'Malignant_dlbcl',
-        'CD8 T cells': 'T_NK', 
-        'Cytotoxic lymphocytes': 'Plasma',
-        'B lineage': 'Mast',
-        'NK cells': 'Epithelial',
-        'Monocytic lineage': 'MoMac',
-        'Myeloid dendritic cells': 'DC',
-        'Neutrophils': 'Granulocyte',
-        'Endothelial cells': 'Endothelial',
-        'Fibroblasts': 'Fibroblast'
+        "T cells": "Malignant_dlbcl",
+        "CD8 T cells": "T_NK",
+        "Cytotoxic lymphocytes": "Plasma",
+        "B lineage": "Mast",
+        "NK cells": "Epithelial",
+        "Monocytic lineage": "MoMac",
+        "Myeloid dendritic cells": "DC",
+        "Neutrophils": "Granulocyte",
+        "Endothelial cells": "Endothelial",
+        "Fibroblasts": "Fibroblast",
     }
-    ground_truth_data.rename(signature_to_celltype, axis = 0, inplace=True)
-    ground_truth_data.drop(columns=["Mast"], inplace=True, errors="ignore") # Remove Mast cells from the ground truth data as they are not used in the training dataset
+    ground_truth_data.rename(signature_to_celltype, axis=0, inplace=True)
+    ground_truth_data.drop(
+        columns=["Mast"], inplace=True, errors="ignore"
+    )  # Remove Mast cells from the ground truth data as they are not used in the training dataset
     return {"dataset": bulk_data, "ground_truth": ground_truth_data.T}
+
 
 def load_bulk_facs(**kwargs) -> dict:
     """Load and preprocess the Bulk/FACS dataset.

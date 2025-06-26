@@ -3,9 +3,9 @@
 from typing import Optional, Tuple
 
 import anndata as ad
+import numpy as np
 import pandas as pd
 import scanpy as sc
-import numpy as np
 from sklearn.model_selection import train_test_split
 
 from constants import GROUPS
@@ -156,7 +156,9 @@ def add_cell_types_grouped(
         col_name = "grouping"
     elif group == "DLBCL_2nd_level_granularity":
         adata.obs[f"cell_types_grouped_{group}"] = adata.obs["celltype_level2_scanvi"]
-        train_test_index = pd.DataFrame(index=adata.obs_names, columns=["to_keep", "Train index", "Test index"])
+        train_test_index = pd.DataFrame(
+            index=adata.obs_names, columns=["to_keep", "Train index", "Test index"]
+        )
         train_test_index["to_keep"] = True
         # Randomly assign 70% to training set and 30% to test set
         n_samples = len(adata.obs_names)
@@ -164,10 +166,10 @@ def add_cell_types_grouped(
         train_mask = np.zeros(n_samples, dtype=bool)
         train_mask[:n_train] = True
         np.random.shuffle(train_mask)
-        
+
         train_test_index["Train index"] = train_mask
         train_test_index["Test index"] = ~train_mask
         return adata, train_test_index
-    
+
     adata.obs[f"cell_types_grouped_{group}"] = train_test_index[col_name]
     return adata, train_test_index

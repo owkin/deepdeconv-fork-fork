@@ -210,7 +210,7 @@ GRANULARITY_TO_EVALUATION_DATASET = {
     "3rd_level_granularity": "CTI",
     "4th_level_granularity": "CTI",
     "FACS_1st_level_granularity": "BULK_FACS",
-    "DLBCL_2nd_level_granularity": "DLBCL_sc", #This is just a test to use the pseudobulks instead of the bulks as evaluation
+    "DLBCL_2nd_level_granularity": "DLBCL_sc",  # This is just a test to use the pseudobulks instead of the bulks as evaluation
     # add the one for TOY
 }
 DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
