@@ -325,6 +325,18 @@ def plot_reconstruction_loss(model_history, n_epochs: int = 100):
     plt.title("Reconstruction loss epochs")
     plt.show()
 
+def plot_reconstruction_loss_pseudobulk(model_history, n_epochs: int = 100):
+    """Plot the train and val reconstruction loss from training."""
+    plt.clf()
+    plt.plot(range(n_epochs), model_history["reconstruction_loss_pseudobulk_train"], label="Train")
+    plt.plot(
+        range(n_epochs),
+        model_history["reconstruction_loss_pseudobulk_validation"],
+        label="Validation",
+    )
+    plt.legend()
+    plt.title("Reconstruction loss pseudobulk epochs")
+    plt.show()
 
 def plot_kl_loss(model_history, n_epochs: int = 100):
     """Plot the train and val KL loss from training."""
@@ -339,6 +351,19 @@ def plot_kl_loss(model_history, n_epochs: int = 100):
     plt.title("KL loss epochs")
     plt.show()
 
+
+def plot_kl_loss_pseudobulk(model_history, n_epochs: int = 100):
+    """Plot the train and val KL loss from training."""
+    plt.clf()
+    plt.plot(range(n_epochs), model_history["kl_local_pseudobulk_train"], label="Train")
+    plt.plot(
+        range(n_epochs),
+        model_history["kl_local_pseudobulk_validation"],
+        label="Validation",
+    )
+    plt.legend()
+    plt.title("KL loss pseudobulk epochs")
+    plt.show()
 
 def plot_pearson_random(model_history, train: bool = True, n_epochs: int = 100):
     """Plot the train or val random vs normal pearson deconv metrics from training."""

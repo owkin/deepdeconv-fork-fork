@@ -646,6 +646,7 @@ class MixUpVAE(VAE):
         kl_weight: float = 1.0,
     ):
         """Computes the loss function for the model."""
+        # Computing the ELBO for the single cells
         x = tensors[REGISTRY_KEYS.X_KEY]
         kl_divergence_z = kl(inference_outputs["qz"], generative_outputs["pz"]).sum(
             dim=-1
@@ -665,12 +666,30 @@ class MixUpVAE(VAE):
 
         weighted_kl_local = kl_weight * kl_local_for_warmup + kl_local_no_warmup
 
+        # Computing the ELBO for the pseudobulk
+        pseudobulk_indices = inference_outputs["pseudobulk_indices"]
+
+        kl_divergence_z_pseudobulk = kl(
+            inference_outputs["qz_pseudobulk"], generative_outputs["pz_pseudobulk"]
+        ).sum(dim=-1)
+
+        if not self.use_observed_lib_size:
+            kl_divergence_l_pseudobulk = kl(
+                inference_outputs["ql_pseudobulk"], generative_outputs["pl_pseudobulk"]
+            ).sum(dim=1)
+        else:
+            kl_divergence_l_pseudobulk = torch.tensor(0.0, device=x.device)
+
+        reconst_loss_pseudobulk = -generative_outputs["px_pseudobulk"].log_prob(x[pseudobulk_indices, :].mean(axis=1)).sum(-1)
+
+        weighted_kl_local_pseudobulk = kl_weight * kl_divergence_z_pseudobulk + kl_divergence_l_pseudobulk
+
+        #Compputing the MixUp Loss for the pseudobulks
         mixup_loss = self.get_mix_up_loss(inference_outputs, generative_outputs)
 
-        loss = torch.mean(reconst_loss + weighted_kl_local) + mixup_loss
+        loss = torch.mean(reconst_loss + weighted_kl_local) + torch.mean(reconst_loss_pseudobulk + weighted_kl_local_pseudobulk) + mixup_loss
 
         # correlation in latent space
-        pseudobulk_indices = inference_outputs["pseudobulk_indices"]
         mean_z = inference_outputs["z"][pseudobulk_indices, :].mean(axis=1)
         pseudobulk_z = inference_outputs["z_pseudobulk"]
         pearson_coeff = get_mean_pearsonr_torch(mean_z, pseudobulk_z)
@@ -732,12 +751,14 @@ class MixUpVAE(VAE):
             "kl_divergence_l": kl_divergence_l,
             "kl_divergence_z": kl_divergence_z,
         }
-
+        #TODO: change the dimension of the reconstruction loss pseudobulk to be the same as the other losses
         return LossOutput(
             loss=loss,
             reconstruction_loss=reconst_loss,
             kl_local=kl_local,
             extra_metrics={
+                "reconstruction_loss_pseudobulk": sum(reconst_loss_pseudobulk) / len(reconst_loss_pseudobulk),
+                "kl_local_pseudobulk": sum(kl_divergence_z_pseudobulk) / len(kl_divergence_z_pseudobulk), #Here we are not considering the library size loss as it is 0.0 with default settings
                 "mixup_penalty": mixup_loss,
                 "pearson_coeff": pearson_coeff,
                 "cosine_similarity": cosine_similarity,
@@ -859,3 +880,7 @@ class MixUpVAE(VAE):
         mixup_penalty = torch.sum(mixup_penalty) / mean_single_cells.shape[0]
 
         return mixup_penalty
+
+
+class MixUpVAE_v2(VAE):
+    pass

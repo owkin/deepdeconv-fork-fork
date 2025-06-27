@@ -95,7 +95,7 @@ if TUNE_MIXUPVI:
         model_history = model_history.loc[model_history[variable] == best_hp[variable]]
     search_space = read_search_space(search_path)
 else:
-    model_path = f"./project/models/{TRAINING_DATASET}_{TRAINING_CELL_TYPE_GROUP}_{N_GENES}_mixupvi.pkl"
+    model_path = f"./project/models/{TRAINING_DATASET}_{TRAINING_CELL_TYPE_GROUP}_{N_GENES}_EXTRA_ELBO_mixupvi"
     model = fit_mixupvi(
         adata_train,
         model_path=model_path,
