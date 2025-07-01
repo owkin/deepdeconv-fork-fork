@@ -94,6 +94,7 @@ DECONV_METHODS = {
         "model_path": "",
         "cell_type_group": "cell_types_grouped",
         "save_model": True,
+        "latent_space_visualizer": True,
     },
     "NNLS": {
         "_target_": "benchmark_utils.NNLSMethod",

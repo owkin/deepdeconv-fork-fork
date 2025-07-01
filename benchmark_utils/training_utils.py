@@ -33,7 +33,9 @@ from constants import (
 from scvi import autotune
 from tuning_configs import TUNED_VARIABLES
 
+from .training_callbacks import LatentSpaceVisualizationCallback
 from .tuning_utils import format_and_save_tuning_results
+
 
 
 def tune_mixupvi(
@@ -104,6 +106,7 @@ def fit_mixupvi(
     cat_cov: List[str] = CAT_COV,
     cont_cov: List[str] = CONT_COV,
     encode_covariates: bool = ENCODE_COVARIATES,
+    latent_space_visualizer: bool = False,
 ):
     """Fit the MixUpVI model.
 
@@ -154,11 +157,17 @@ def fit_mixupvi(
             gene_likelihood=GENE_LIKELIHOOD,
         )
         mixupvi_model.view_anndata_setup()
+
+        latent_space_visualizer_callback = None
+        if latent_space_visualizer:
+            latent_space_visualizer_callback = [LatentSpaceVisualizationCallback(adata, cell_type_group, visualization_frequency=10, path_to_save_figures=model_path)]
+
         mixupvi_model.train(
             max_epochs=MAX_EPOCHS,
             batch_size=BATCH_SIZE,
             train_size=TRAIN_SIZE,
             check_val_every_n_epoch=CHECK_VAL_EVERY_N_EPOCH,
+            callbacks=latent_space_visualizer_callback,
         )
         if save_model:
             mixupvi_model.save(model_path)

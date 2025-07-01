@@ -164,20 +164,12 @@ class MixUpVIMethod(AbstractDeconvolutionMethod):
         cell_type_group: str,
         model_path: str = "",
         save_model: bool = False,
+        latent_space_visualizer: bool = False,
     ):
         """Fit MixUpVI and create the latent signature matrix."""
         # self.filtered_genes = adata_train.var.index[
         #     adata_train.var["highly_variable"]
         # ].tolist()
-
-        import pickle
-
-        with open("project/highest_r2_genes_DLBCL_2nd_gran.pkl", "rb") as f:
-            self.filtered_genes = pickle.load(f)
-
-        logger.warning(
-            "Here we are automatically using the highest R2 genes for the 2nd granularity of the DLBCL dataset as input genes for the network."
-        )
 
         adata_train = adata_train[:, self.filtered_genes]
         self.adata_obs = adata_train.obs
@@ -188,6 +180,7 @@ class MixUpVIMethod(AbstractDeconvolutionMethod):
             model_path=model_path,
             cell_type_group=cell_type_group,
             save_model=save_model,
+            latent_space_visualizer=latent_space_visualizer,
         )
 
         logger.debug("Training over. Creation of latent signature matrix...")

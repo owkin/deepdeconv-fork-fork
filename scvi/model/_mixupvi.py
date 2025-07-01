@@ -91,7 +91,7 @@ class MixUpVI(SCVI):
         -------
         Low-dimensional representation for each cell or a tuple containing its mean and variance.
         """
-        self._check_if_trained(warn=False)
+        self._check_if_trained(warn=True) #Here the warining is equal to True so that it does not raise an error if we initialize the model while training (needed for the latent space visualizer)
 
         adata = self._validate_anndata(adata)
         scdl = self._make_data_loader(
@@ -101,7 +101,9 @@ class MixUpVI(SCVI):
         latent_qzm = []
         latent_qzv = []
         for tensors in scdl:
+            tensors = {key: value.to(self.device) for key, value in tensors.items()} # TODO: This is purposely done for the latent space visualizer, we should find a better way to do this
             inference_inputs = self.module._get_inference_input(tensors)
+            inference_inputs = {key: value.to(self.device) if value is not None else value for key, value in inference_inputs.items()}
             outputs = self.module.inference(**inference_inputs)
             suffix = ""
             if get_pseudobulk:
