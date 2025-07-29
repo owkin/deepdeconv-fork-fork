@@ -1,7 +1,6 @@
 """Run MixUpVI experiments with the right sanity checks."""
 
 # %%
-import pandas as pd
 import scanpy as sc
 import scvi
 from loguru import logger
