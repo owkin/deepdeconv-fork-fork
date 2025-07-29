@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import numpy as np
-import os
-import pandas as pd
 from loguru import logger
 from sklearn.linear_model import LinearRegression
 from typing import Optional
+import numpy as np
+import os
+import pandas as pd
+import scipy.sparse
+
 
 from .pseudobulk_dataset_utils import launch_evaluation_pseudobulk_samplings
 from .run_benchmark_constants import (
@@ -79,7 +81,7 @@ def initialize_deconv_methods(
                     n_cells_per_evaluation_pseudobulk=100,
                     n_samples_evaluation_pseudobulk=500,
                 )
-                kwargs["adata_pseudobulk"] = train_pseudobulks["adata_pseudobulk_test_counts"]
+                kwargs["adata_pseudobulk"] = train_pseudobulks["adata_pseudobulk_test_counts_mean"]
             deconv_method_initialized = deconv_method_func(**kwargs)
             deconv_methods_initialized[deconv_method] = deconv_method_initialized
         elif deconv_method in SIGNATURE_MATRIX_MODELS:
@@ -131,6 +133,31 @@ def save_deconvolution_results(deconv_results: dict, experiment_path):
                 save_deconvolution_results(value, os.path.join(granularity_dir, key))
             else:                
                 value.to_csv(os.path.join(granularity_dir, f"{key}.csv"))
+
+
+def log_scale_data(data: np.ndarray|pd.DataFrame|scipy.sparse.spmatrix, base: float = 2.0, pseudocount: float = 1.0) -> np.ndarray|pd.DataFrame:
+    """Apply log transformation to the data with a pseudocount.
+    
+    Parameters
+    ----------
+    data : np.ndarray, pd.DataFrame, or scipy.sparse.spmatrix
+        Input data to transform
+    base : float, default=2.0
+        Base of the logarithm
+    pseudocount : float, default=1.0
+        Pseudocount to add before taking log to handle zeros
+        
+    Returns
+    -------
+    np.ndarray or pd.DataFrame
+        Log-transformed data
+    """
+    # Convert sparse matrix to dense if needed
+    if scipy.sparse.issparse(data):
+            data = data.toarray()
+    # Ensure data is float64
+    data = data.astype(np.float64)
+    return np.log1p(data + (pseudocount - 1)) / np.log(base)
     
 
 def create_random_proportion(

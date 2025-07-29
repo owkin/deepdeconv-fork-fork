@@ -132,16 +132,14 @@ def run_benchmark(
 
     # Compute basic correlations and error metrics
     logger.info("Computing correlations and error metrics.")
-    df_samples_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="sample_wise_correlation")
-    df_cell_type_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="cell_type_wise_correlation")
-    df_mse = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="mse")
-    df_mae = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="mae")
-    df_all_metrics = pd.concat([
-        df_samples_correlation, 
-        df_cell_type_correlation,
-        df_mse,
-        df_mae
-    ], ignore_index=True)
+    df_all_metrics = {
+        metric: compute_benchmark_correlations(all_data["deconv_results"], correlation_type=metric)
+        for metric in ["sample_wise_correlation", "cell_type_wise_correlation", "sample_wise_mse", "sample_wise_mae"]
+    }
+    df_all_metrics = pd.concat(
+        [df.assign(Source=metric) for metric, df in df_all_metrics.items()],
+        ignore_index=True
+    )
     if save:
         df_all_metrics.to_csv(experiment_name + "/df_all_metrics.csv")
         logger.debug(f"Saved correlation and error metric results in {experiment_name}/df_all_metrics.csv")
@@ -161,7 +159,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     print(args.config)
-    # config_dict = RunBenchmarkConfig.from_config_yaml(config_path="/home/owkin/deepdeconv-fork/benchmark_configs/split_configs_2nd_level/config_test_100cells.yaml")
-    config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config) #"/home/owkin/deepdeconv-fork/benchmark_configs/config_test.yaml") #args.config)
+    config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config)
     
     run_benchmark(**config_dict)    

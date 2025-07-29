@@ -119,9 +119,13 @@ def create_purified_pseudobulk_dataset(
         if aggregation_method == "mean":
             averaged_data["relative_counts"].append(adata[group_indices].layers["relative_counts"].mean(axis=0).tolist()[0])
             averaged_data["counts"].append(adata[group_indices].layers["counts"].mean(axis=0).tolist()[0])
-        else:
+        elif aggregation_method == "mean":
             averaged_data["relative_counts"].append(adata[group_indices].layers["relative_counts"].sum(axis=0).tolist()[0])
             averaged_data["counts"].append(adata[group_indices].layers["counts"].sum(axis=0).tolist()[0])
+        else:
+            raise ValueError(
+                "No aggreation method was provided."
+            )
         group.append(group_key)
 
     # pseudobulk dataset
@@ -139,8 +143,8 @@ def create_purified_pseudobulk_dataset(
     groundtruth_fractions.columns.name = cell_type_group
 
     pseudobulks = {
-        "adata_pseudobulk_test_counts": adata_pseudobulk_counts,
-        "adata_pseudobulk_test_rc": adata_pseudobulk_rc,
+        f"adata_pseudobulk_test_counts_{aggregation_method}": adata_pseudobulk_counts,
+        f"adata_pseudobulk_test_rc_{aggregation_method}": adata_pseudobulk_rc,
         "df_proportions_test": groundtruth_fractions,
     }
 
@@ -163,7 +167,7 @@ def create_uniform_pseudobulk_dataset(
     """
     logger.info("Creating uniform pseudobulk dataset...")
     random.seed(random.randint(0, 1000))
-    averaged_data, group = {"relative_counts": [], "counts": []}, []
+    averaged_data, _ = {"relative_counts": [], "counts": []}, []
     groundtruth_fractions = []
     for _ in range(n_sample):
         cell_sample = random.sample(list(adata.obs_names), n_cells)
@@ -173,9 +177,13 @@ def create_uniform_pseudobulk_dataset(
         if aggregation_method == "mean":
             averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0])
             averaged_data["counts"].append(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
-        else:
+        elif aggregation_method == "sum":
             averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].sum(axis=0).tolist()[0])
             averaged_data["counts"].append(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
+        else:
+            raise ValueError(
+                "No aggreation method was provided."
+            )
 
     # pseudobulk dataset
     adata_pseudobulk_rc = create_anndata_pseudobulk(adata.obs, adata.var_names,
@@ -196,8 +204,8 @@ def create_uniform_pseudobulk_dataset(
     )  # the Nan are cells not sampled
 
     pseudobulks = {
-        "adata_pseudobulk_test_counts": adata_pseudobulk_counts,
-        "adata_pseudobulk_test_rc": adata_pseudobulk_rc,
+        f"adata_pseudobulk_test_counts_{aggregation_method}": adata_pseudobulk_counts,
+        f"adata_pseudobulk_test_rc_{aggregation_method}": adata_pseudobulk_rc,
         "df_proportions_test": groundtruth_fractions,
     }     
     return pseudobulks
@@ -210,7 +218,6 @@ def create_dirichlet_pseudobulk_dataset(
     cell_type_group: str = "cell_types_grouped",
     n_cells : int = 1000,
     is_n_cells_random : bool = False,
-    add_sparsity : bool = False,
 ):
     """Create pseudobulk dataset from single-cell RNA data, sampled from a dirichlet
     distribution. If a prior belief on the cell fractions (e.g. prior knowledge from
@@ -239,7 +246,7 @@ def create_dirichlet_pseudobulk_dataset(
     )
 
     random.seed(seed)
-    averaged_data, group = {"relative_counts": [], "counts": [], "counts_sum": []}, []
+    averaged_data, _ = {"relative_counts_mean": [], "counts_mean": [], "counts_sum": []}, []
     all_adata_samples = []
     for i in range(n_sample):
         sample_data = []
@@ -258,23 +265,20 @@ def create_dirichlet_pseudobulk_dataset(
             sample_data.extend(cell_sample)
         adata_sample = adata[sample_data]
 
-        averaged_data["relative_counts"].append(adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0])
+        averaged_data["relative_counts_mean"].append(adata_sample.layers["relative_counts"].mean(axis=0).tolist()[0])
         X = np.array(adata_sample.layers["counts"].mean(axis=0).tolist()[0])
         X_sum = np.array(adata_sample.layers["counts"].sum(axis=0).tolist()[0])
-        # TODO: For now, we remove the possibility to add sparsity, as all_adata_samples would not be affected
-        # if add_sparsity:
-        #     X = random_state.binomial(1, 0.2, X.shape[0]) * X
-        averaged_data["counts"].append(X)
+        averaged_data["counts_mean"].append(X)
         averaged_data["counts_sum"].append(X_sum)
         
         all_adata_samples.append(adata_sample)
 
     # pseudobulk dataset
-    adata_pseudobulk_rc = create_anndata_pseudobulk(adata.obs, adata.var_names,
-                                                    np.array(averaged_data["relative_counts"])
+    adata_pseudobulk_rc_mean = create_anndata_pseudobulk(adata.obs, adata.var_names,
+                                                    np.array(averaged_data["relative_counts_mean"])
                                                     )
-    adata_pseudobulk_counts = create_anndata_pseudobulk(adata.obs, adata.var_names,
-                                                    np.array(averaged_data["counts"])
+    adata_pseudobulk_counts_mean = create_anndata_pseudobulk(adata.obs, adata.var_names,
+                                                    np.array(averaged_data["counts_mean"])
                                                     )
     adata_pseudobulk_counts_sum = create_anndata_pseudobulk(adata.obs, adata.var_names,
                                                     np.array(averaged_data["counts_sum"])
@@ -283,7 +287,7 @@ def create_dirichlet_pseudobulk_dataset(
     # ground truth fractions
     groundtruth_fractions = pd.DataFrame(
         groundtruth_fractions,
-        index=adata_pseudobulk_counts.obs_names,
+        index=adata_pseudobulk_counts_mean.obs_names,
         columns=list(cell_types.index)
     )
     groundtruth_fractions = groundtruth_fractions.fillna(
@@ -292,9 +296,9 @@ def create_dirichlet_pseudobulk_dataset(
 
     pseudobulks = {
         "all_adata_samples_test": all_adata_samples,
-        "adata_pseudobulk_test_counts": adata_pseudobulk_counts,
+        "adata_pseudobulk_test_counts_mean": adata_pseudobulk_counts_mean,
         "adata_pseudobulk_test_counts_sum": adata_pseudobulk_counts_sum,
-        "adata_pseudobulk_test_rc": adata_pseudobulk_rc,
+        "adata_pseudobulk_test_rc_mean": adata_pseudobulk_rc_mean,
         "df_proportions_test": groundtruth_fractions,
     }     
     return pseudobulks

@@ -137,36 +137,3 @@ def compute_mae(deconv_results, ground_truth_fractions):
     mae_df = pd.DataFrame({"mae": mae_values})
     mae_df["sample_id"] = deconv_results.index
     return mae_df
-
-
-def concordance_correlation_coefficient(y_true, y_pred):
-    """
-    Calculate Lin's Concordance Correlation Coefficient.
-    
-    Parameters
-    ----------
-    y_true : array-like
-        Ground truth values
-    y_pred : array-like
-        Predicted values
-        
-    Returns
-    -------
-    float
-        Lin's Concordance Correlation Coefficient
-    """
-    mean_true = np.mean(y_true)
-    mean_pred = np.mean(y_pred)
-    
-    var_true = np.var(y_true)
-    var_pred = np.var(y_pred)
-    
-    covariance = np.cov(y_true, y_pred)[0,1]
-    
-    # Pearson correlation coefficient
-    pearson = covariance / np.sqrt(var_true * var_pred)
-    
-    # Bias correction factor
-    C_b = (2 * covariance) / (var_true + var_pred + (mean_true - mean_pred)**2)
-    
-    return pearson * C_b

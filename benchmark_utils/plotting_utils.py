@@ -20,8 +20,8 @@ def plot_benchmark_correlations(df_all_correlations, save_path: str = "", save: 
     plot_func_map = {
         "sample_wise_correlation": plot_deconv_results,
         "cell_type_wise_correlation": plot_deconv_results_group,
-        "mse": lambda df, **kwargs: plot_error_metric(df, "mse", **kwargs),
-        "mae": lambda df, **kwargs: plot_error_metric(df, "mae", **kwargs)
+        "sample_wise_mse": lambda df, **kwargs: plot_error_metric(df, "mse", **kwargs),
+        "sample_wise_mae": lambda df, **kwargs: plot_error_metric(df, "mae", **kwargs)
     }
 
     for granularity in df_all_correlations.granularity.unique():
@@ -30,7 +30,7 @@ def plot_benchmark_correlations(df_all_correlations, save_path: str = "", save: 
             # Multiple num_cells were computed
             df_to_plot = df_all_correlations_temp[df_all_correlations_temp["correlation_type"] == "sample_wise_correlation"]
             for group in _get_groups(df_to_plot, "sampling_method"):
-                plot_deconv_lineplot(group, save=save, save_path=save_path)
+                plot_deconv_lineplot(group, metric="correlations", save=save, save_path=save_path)
         else:
             # One pseudobulk num_cells or bulk
             for correlation_type in df_all_correlations_temp["correlation_type"].unique():

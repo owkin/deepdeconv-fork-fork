@@ -32,12 +32,12 @@ CORRELATION_FUNCTIONS = {
         "deconv_results": None, 
         "ground_truth_fractions": None,
     }, 
-    "mse": {
+    "sample_wise_mse": {
         "_target_": "benchmark_utils.compute_mse",
         "deconv_results": None, 
         "ground_truth_fractions": None,
     },
-    "mae": {   
+    "sample_wise_mae": {   
         "_target_": "benchmark_utils.compute_mae",
         "deconv_results": None, 
         "ground_truth_fractions": None,
@@ -122,6 +122,7 @@ DECONV_METHODS = {
         "signature_matrix": None,
         "adata_train": None,
         "use_signature": False,
+        "cell_type_group": "cell_types_grouped",
     },
     "Scaden": {
         "_target_": "benchmark_utils.ScadenMethod",
@@ -129,6 +130,7 @@ DECONV_METHODS = {
         "signature_matrix": None,
         "adata_train": None,
         "use_signature": False,
+        "cell_type_group": "cell_types_grouped",
     }
 }
 
@@ -137,7 +139,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "_target_": "benchmark_utils.create_purified_pseudobulk_dataset",
         "adata": None,
         "cell_type_group": "cell_types_grouped",
-        "aggregation_method": "sum", #"mean",
+        "aggregation_method": "mean",
     },
     "UNIFORM": {
         "_target_": "benchmark_utils.create_uniform_pseudobulk_dataset",
@@ -145,7 +147,7 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "n_sample": None,
         "n_cells": None,
         "cell_type_group": "cell_types_grouped",
-        "aggregation_method": "sum",  #"mean",
+        "aggregation_method": "mean",
     },
     "DIRICHLET": {
         "_target_": "benchmark_utils.create_dirichlet_pseudobulk_dataset",
@@ -155,7 +157,6 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "n_cells": None,
         "cell_type_group": "cell_types_grouped",
         "is_n_cells_random": False,
-        "add_sparsity": False,
     }
 }
 
@@ -202,17 +203,17 @@ GRANULARITY_TO_EVALUATION_DATASET = {
     # add the one for TOY
 }
 DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
-    "NNLS": "adata_pseudobulk_test_rc",
-    "OLS": "adata_pseudobulk_test_rc",
-    "DWLS": "adata_pseudobulk_test_rc",
-    "RLR": "adata_pseudobulk_test_rc",
-    "NuSVR": "adata_pseudobulk_test_rc",
-    "WNNLS": "adata_pseudobulk_test_rc",
-    "MixUpVI": "adata_pseudobulk_test_counts",
-    "scVI": "adata_pseudobulk_test_counts",
-    "DestVI": "adata_pseudobulk_test_counts",
-    # If you want to use TAPE or Scaden with signature matrix (which is in relative counts)
-    # you need to use the relative counts data `adata_pseudobulk_test_rc`
+    "NNLS": "adata_pseudobulk_test_rc_mean",
+    "OLS": "adata_pseudobulk_test_rc_mean",
+    "DWLS": "adata_pseudobulk_test_rc_mean",
+    "RLR": "adata_pseudobulk_test_rc_mean",
+    "NuSVR": "adata_pseudobulk_test_rc_mean",
+    "WNNLS": "adata_pseudobulk_test_rc_mean",
+    "MixUpVI": "adata_pseudobulk_test_counts_mean",
+    "scVI": "adata_pseudobulk_test_counts_mean",
+    "DestVI": "adata_pseudobulk_test_counts_mean",
+    # If you want to train TAPE or Scaden with signature matrix (which is in relative counts)
+    # you need to use the relative counts data `adata_pseudobulk_test_rc_mean`
     "TAPE": "adata_pseudobulk_test_counts_sum",
     "Scaden": "adata_pseudobulk_test_counts_sum",
 }
