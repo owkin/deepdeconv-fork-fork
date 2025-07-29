@@ -254,12 +254,12 @@ def create_dirichlet_pseudobulk_dataset(
             # If sample larger than cell population, sample with replacement
             if posterior_dirichlet[i][j] > cell_types[cell_type]:
                 cell_sample = random.choices(
-                    list(adata.obs.loc[adata.obs.cell_types_grouped == cell_type].index),
+                    list(adata.obs.loc[adata.obs[cell_type_group] == cell_type].index),
                     k=posterior_dirichlet[i][j],
                 )
             else:
                 cell_sample = random.sample(
-                    list(adata.obs.loc[adata.obs.cell_types_grouped == cell_type].index),
+                    list(adata.obs.loc[adata.obs[cell_type_group] == cell_type].index),
                     posterior_dirichlet[i][j],
                 )
             sample_data.extend(cell_sample)

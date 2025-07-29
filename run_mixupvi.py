@@ -49,6 +49,7 @@ elif TRAINING_DATASET == "CTI":
     preprocess_scrna(adata,
                      keep_genes=N_GENES,
                      batch_key="donor_id")
+    cell_type = f"cell_types_grouped_{TRAINING_CELL_TYPE_GROUP}"
 elif TRAINING_DATASET == "CTI_RAW":
     warnings.warn("The raw data of this adata is on adata.raw.X, but the normalised "
                   "adata.X will be used here")
@@ -67,6 +68,9 @@ if TRAINING_DATASET != "TOY":
     adata, train_test_index = add_cell_types_grouped(adata, TRAINING_CELL_TYPE_GROUP)
     adata_train = adata[train_test_index["Train index"]]
     adata_test = adata[train_test_index["Test index"]]
+
+filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+adata_train = adata_train[:, filtered_genes]
 
 
 # %% Fit MixUpVI with hyperparameters defined in constants.py
@@ -87,7 +91,7 @@ if TUNE_MIXUPVI:
         model_history = model_history.loc[model_history[variable] == best_hp[variable]]
     search_space = read_search_space(search_path)
 else:
-    model_path = f"project/models/{TRAINING_DATASET}_{TRAINING_CELL_TYPE_GROUP}_{N_GENES}_mixupvi.pkl"
+    model_path = "" # f"/home/owkin/project/Simon/plots_for_paper/scvi_model.pkl"
     model = fit_mixupvi(
         adata_train,
         model_path=model_path,
@@ -97,12 +101,11 @@ else:
         cont_cov=CONT_COV,
         encode_covariates=ENCODE_COVARIATES,
     )
-    model_history = model.history
 
 
 # %% Load model / results: Uncomment if not running previous cells
 # if TUNE_MIXUPVI:
-#     path = "/home/owkin/project/mixupvi_tuning/n_latent-seed/CTI_dataset_tune_mixupvi_2024-06-07-18:30:37"
+#     path = "/home/owkin/project/mixupvi_tuning/n_latent-seed/CTI_PROCESSED_dataset_tune_mixupvi_2024-04-17-16:38:20"
 #     all_results = read_tuning_results(f"{path}/tuning_results.csv")
 #     search_space = read_search_space(f"{path}/search_space.pkl")
 #     if "best_hp" in search_space:
@@ -131,9 +134,9 @@ plot_kl_loss(model_history, n_epochs=n_epochs)
 
 # %% Plots to compare HPs
 if TUNE_MIXUPVI:
-    n_epochs = len(set(all_results["train_loss_epoch"].index))
-    # hp_index_to_plot = None
-    hp_index_to_plot = [0,1] # only these index (of the HPs tried) will be plotted, for clearer visualisation
+    n_epochs = 100 # len(set(all_results["train_loss_epoch"].index))
+    hp_index_to_plot = None
+    hp_index_to_plot = [0,1,2, 5] # only these index (of the HPs tried) will be plotted, for clearer visualisation
 
     tuned_hps = all_results.T.loc[["train" not in col and "validation" not in col for col in all_results.columns]].index
     if len(tuned_hps) == 1 or (len(tuned_hps) == 2 and "seed" in tuned_hps):
