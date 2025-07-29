@@ -10,19 +10,19 @@ N_GENES = 4000 # number of input genes after preprocessing (NOT USED INSIDE BENC
 
 ## Constants for both run_mixupvi.py and run_benchmark.py
 # For all VI models
-LATENT_SIZE = 30
+LATENT_SIZE = 10
 MAX_EPOCHS = 100
-SAVE_MODEL = False
+SAVE_MODEL = True
 SEED = 3
 # MixUpVI training hyperparameters
-BATCH_SIZE = 1024
-TRAIN_SIZE = 0.7 # as opposed to validation
+BATCH_SIZE = 2048
+TRAIN_SIZE = 0.9 # as opposed to validation
 CHECK_VAL_EVERY_N_EPOCH = None
 if TRAIN_SIZE < 1:
     CHECK_VAL_EVERY_N_EPOCH = 1
 # MixUpVI model hyperparameters
 N_PSEUDOBULKS = 100
-N_CELLS_PER_PSEUDOBULK = 256 # None (then will be batch size) or int (will cap at batch size)
+N_CELLS_PER_PSEUDOBULK = 100 # None (then will be batch size) or int (will cap at batch size)
 N_HIDDEN = 512
 CONT_COV = None  # None or list of continuous covariates to include
 CAT_COV = None # None or ["donor_id", "assay"]

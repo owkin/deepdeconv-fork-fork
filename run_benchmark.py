@@ -68,6 +68,7 @@ def run_benchmark(
                                 granularity
                             )
                         all_data["datasets"][dataset][granularity] = train_test_index
+            
 
 
     logger.info("All the data is now loaded.")
@@ -113,6 +114,7 @@ def run_benchmark(
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key] = {}
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key]["deconvolution_results"] = deconv_results
                         all_data["deconv_results"][granularity][evaluation_pseudobulk_sampling][n_cells][deconv_method_initialized_key]["ground_truth"] = evaluation_pseudobulks["df_proportions_test"]
+                    del evaluation_pseudobulks
         else:
             # Direct inference on Bulk data
             # TODO: should we allow inference on scRNAseq-derived pseudobulks, from bulk granularities ?
@@ -128,20 +130,24 @@ def run_benchmark(
         save_deconvolution_results(all_data["deconv_results"], experiment_path=experiment_name)
         logger.debug("Saved deconvolution results and ground truths.")
 
-    # Compute basic correlations
-    logger.info("Computing correlations.")
-    df_samples_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="sample_wise_correlation")
-    df_cell_type_correlation = compute_benchmark_correlations(all_data["deconv_results"], correlation_type="cell_type_wise_correlation")
-    df_all_correlations = pd.concat([df_samples_correlation, df_cell_type_correlation], ignore_index=True)
+    # Compute basic correlations and error metrics
+    logger.info("Computing correlations and error metrics.")
+    df_all_metrics = {
+        metric: compute_benchmark_correlations(all_data["deconv_results"], correlation_type=metric)
+        for metric in ["sample_wise_correlation", "cell_type_wise_correlation", "sample_wise_mse", "sample_wise_mae"]
+    }
+    df_all_metrics = pd.concat(
+        [df.assign(Source=metric) for metric, df in df_all_metrics.items()],
+        ignore_index=True
+    )
     if save:
-        df_all_correlations.to_csv(experiment_name + "/df_all_correlations.csv")
-        logger.debug(f"Saved correlation results in {experiment_name}/df_all_correlations.csv")
-    logger.info("Correlations computed.")
+        df_all_metrics.to_csv(experiment_name + "/df_all_metrics.csv")
+        logger.debug(f"Saved correlation and error metric results in {experiment_name}/df_all_metrics.csv")
+    logger.info("Correlations and error metrics computed.")
 
     # Basic plotting
-    plot_benchmark_correlations(df_all_correlations, save_path=experiment_name)
+    plot_benchmark_correlations(df_all_metrics, save_path=experiment_name)
     logger.debug(f"Saved plots.")
-
     open(f"{experiment_name}/experiment_over.txt", "w").close() # Finish experiment
     logger.info("Experiment over.")
 
@@ -152,7 +158,7 @@ if __name__ == "__main__":
         "--config", type=str, required=True, help="Path to the YAML configuration file"
     )
     args = parser.parse_args()
-
+    print(args.config)
     config_dict = RunBenchmarkConfig.from_config_yaml(config_path=args.config)
-
-    run_benchmark(**config_dict)
+    
+    run_benchmark(**config_dict)    

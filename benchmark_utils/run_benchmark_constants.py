@@ -32,6 +32,16 @@ CORRELATION_FUNCTIONS = {
         "deconv_results": None, 
         "ground_truth_fractions": None,
     }, 
+    "sample_wise_mse": {
+        "_target_": "benchmark_utils.compute_mse",
+        "deconv_results": None, 
+        "ground_truth_fractions": None,
+    },
+    "sample_wise_mae": {   
+        "_target_": "benchmark_utils.compute_mae",
+        "deconv_results": None, 
+        "ground_truth_fractions": None,
+    }       
 }
 
 DATASETS = {
@@ -59,6 +69,37 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.NNLSMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "use_log_scale": False,
+    },
+    "DWLS": {
+        "_target_": "benchmark_utils.DWLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "use_log_scale": False,
+    },
+    "OLS": {
+        "_target_": "benchmark_utils.OLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "use_log_scale": False,
+    },
+    "RLR": {
+        "_target_": "benchmark_utils.RLRMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "use_log_scale": False,
+    },
+    "NuSVR": {
+        "_target_": "benchmark_utils.NuSVRMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "use_log_scale": False,
+    },
+    "WNNLS": {
+        "_target_": "benchmark_utils.WNNLSMethod",
+        "signature_matrix_name": "",
+        "signature_matrix": None,
+        "use_log_scale": False,
     },
     "scVI": {
         "_target_": "benchmark_utils.scVIMethod",
@@ -79,11 +120,17 @@ DECONV_METHODS = {
         "_target_": "benchmark_utils.TAPEMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "adata_train": None,
+        "use_signature": False,
+        "cell_type_group": "cell_types_grouped",
     },
     "Scaden": {
         "_target_": "benchmark_utils.ScadenMethod",
         "signature_matrix_name": "",
         "signature_matrix": None,
+        "adata_train": None,
+        "use_signature": False,
+        "cell_type_group": "cell_types_grouped",
     }
 }
 
@@ -110,7 +157,6 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
         "n_cells": None,
         "cell_type_group": "cell_types_grouped",
         "is_n_cells_random": False,
-        "add_sparsity": False,
     }
 }
 
@@ -121,8 +167,8 @@ EVALUATION_PSEUDOBULK_SAMPLINGS = {
 N_CELLS_EVALUATION_PSEUDOBULK_SAMPLINGS = {"UNIFORM", "DIRICHLET"}
 TRAIN_DATASETS = {"CTI"}
 SINGLE_CELL_DATASETS = {"TOY", "CTI"}
-MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI"}
-SIGNATURE_MATRIX_MODELS = {"NNLS", "TAPE", "Scaden"}
+MODEL_TO_FIT = {"MixUpVI", "scVI", "DestVI", "TAPE", "Scaden"}
+SIGNATURE_MATRIX_MODELS = {"NNLS", "OLS", "DWLS", "RLR", "NuSVR", "WNNLS"}
 SINGLE_CELL_GRANULARITIES = {
     "1st_level_granularity", 
     "2nd_level_granularity", 
@@ -157,12 +203,19 @@ GRANULARITY_TO_EVALUATION_DATASET = {
     # add the one for TOY
 }
 DECONV_METHOD_TO_EVALUATION_PSEUDOBULK = {
-    "NNLS": "adata_pseudobulk_test_rc",
-    "TAPE": "adata_pseudobulk_test_rc",
-    "Scaden": "adata_pseudobulk_test_rc",
-    "MixUpVI": "adata_pseudobulk_test_counts",
-    "scVI": "adata_pseudobulk_test_counts",
-    "DestVI": "adata_pseudobulk_test_counts",
+    "NNLS": "adata_pseudobulk_test_rc_mean",
+    "OLS": "adata_pseudobulk_test_rc_mean",
+    "DWLS": "adata_pseudobulk_test_rc_mean",
+    "RLR": "adata_pseudobulk_test_rc_mean",
+    "NuSVR": "adata_pseudobulk_test_rc_mean",
+    "WNNLS": "adata_pseudobulk_test_rc_mean",
+    "MixUpVI": "adata_pseudobulk_test_counts_mean",
+    "scVI": "adata_pseudobulk_test_counts_mean",
+    "DestVI": "adata_pseudobulk_test_counts_mean",
+    # If you want to train TAPE or Scaden with signature matrix (which is in relative counts)
+    # you need to use the relative counts data `adata_pseudobulk_test_rc_mean`
+    "TAPE": "adata_pseudobulk_test_counts_sum",
+    "Scaden": "adata_pseudobulk_test_counts_sum",
 }
 TRAINING_CONSTANTS_TO_SAVE = [
     "LATENT_SIZE",

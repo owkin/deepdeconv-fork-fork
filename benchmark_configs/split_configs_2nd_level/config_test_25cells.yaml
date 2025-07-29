@@ -1,0 +1,14 @@
+## A test config to run the benchmark
+
+deconv_methods: ["MixUpVI", "Scaden", "TAPE", "DWLS", "NNLS", "OLS", "RLR", "NuSVR", "WNNLS"]
+evaluation_datasets: ["CTI"] #, "BULK_FACS"]
+granularities: ["2nd_level_granularity"] #, "2nd_level_granularity"] #, "FACS_1st_level_granularity"]
+evaluation_pseudobulk_samplings: ["DIRICHLET"] # "UNIFORM", "PURIFIED"
+n_samples_evaluation_pseudobulk: 400
+n_cells_per_evaluation_pseudobulk: [25]
+signature_matrices: ["CTI_2nd_level_granularity"] # "FACS_1st _level_granularity"]
+train_dataset: "CTI"
+n_variable_genes: 2500
+experiment_name: "preprint_experiments/2nd_level_25" # if None, a random name will be chosen
+save: True # if False, only the plots will be saved
+use_log_scale: False # Whether to apply log scaling to linear methods

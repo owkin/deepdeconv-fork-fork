@@ -419,20 +419,24 @@ class RunBenchmarkConfig:
             logger.debug(f"Saved config dict to {config_path}")
             # Save training config
             if len(set(config_dict["deconv_methods"]).intersection(MODEL_TO_FIT))>0:
+                # Only save training config for MixUpVI, scVI, DestVI (not TAPE or Scaden)
                 if "MixUpVI" in config_dict["deconv_methods"]:
                     training_constants_to_save = TRAINING_CONSTANTS_TO_SAVE
                 elif "scVI" in config_dict["deconv_methods"] or "DestVI" in config_dict[
                     "deconv_methods"
                 ]:
                     training_constants_to_save = ["LATENT_SIZE", "MAX_EPOCHS"]
-                training_config = {
-                    key: getattr(constants, key)
-                    for key in training_constants_to_save if hasattr(constants, key)
-                }
-                config_path = full_path + "/training_config.json"
-                with open(config_path, "w", encoding="utf-8") as json_file:
-                    json.dump(training_config, json_file)
-                logger.debug(f"Saved config dict to {config_path}")
+                else:
+                    training_constants_to_save = []
+                if training_constants_to_save:  # Only save if not empty
+                    training_config = {
+                        key: getattr(constants, key)
+                        for key in training_constants_to_save if hasattr(constants, key)
+                    }
+                    config_path = full_path + "/training_config.json"
+                    with open(config_path, "w", encoding="utf-8") as json_file:
+                        json.dump(training_config, json_file)
+                    logger.debug(f"Saved config dict to {config_path}")
 
         return config_dict
 

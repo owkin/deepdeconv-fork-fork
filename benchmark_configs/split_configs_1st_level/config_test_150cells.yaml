@@ -5,10 +5,10 @@ evaluation_datasets: ["CTI"] #, "BULK_FACS"]
 granularities: ["1st_level_granularity"] #, "2nd_level_granularity"] #, "FACS_1st_level_granularity"]
 evaluation_pseudobulk_samplings: ["DIRICHLET"] # "UNIFORM", "PURIFIED"
 n_samples_evaluation_pseudobulk: 400
-n_cells_per_evaluation_pseudobulk: [10, 25, 50, 75, 100, 125, 150, 200, 250, 300, 400, 500, 750, 1000] #, 600, 700, 800, 900, 1000]
+n_cells_per_evaluation_pseudobulk: [150]
 signature_matrices: ["CTI_1st_level_granularity"] # "FACS_1st _level_granularity"]
 train_dataset: "CTI"
 n_variable_genes: 2500
-experiment_name: "preprint_experiments/1st_level/" # if None, a random name will be chosen
+experiment_name: "preprint_experiments/1st_level_150" # if None, a random name will be chosen
 save: True # if False, only the plots will be saved
 use_log_scale: False # Whether to apply log scaling to linear methods

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import scipy.stats
 from loguru import logger
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 from .run_benchmark_constants import (
     initialize_func,
@@ -111,3 +113,27 @@ def compute_group_correlations(deconv_results, ground_truth_fractions):
     correlations = pd.DataFrame({"correlations": correlations})
     correlations["cell_types"] = deconv_results.columns
     return correlations
+
+
+def compute_mse(deconv_results, ground_truth_fractions):
+    """Compute Mean Squared Error between deconvolution results and ground truth fractions."""
+    deconv_results = deconv_results[ground_truth_fractions.columns]  # align columns
+    mse_values = [
+        mean_squared_error(ground_truth_fractions.iloc[i], deconv_results.iloc[i])
+        for i in range(len(deconv_results))
+    ]
+    mse_df = pd.DataFrame({"mse": mse_values})
+    mse_df["sample_id"] = deconv_results.index
+    return mse_df
+
+
+def compute_mae(deconv_results, ground_truth_fractions):
+    """Compute Mean Absolute Error between deconvolution results and ground truth fractions."""
+    deconv_results = deconv_results[ground_truth_fractions.columns]  # align columns
+    mae_values = [
+        mean_absolute_error(ground_truth_fractions.iloc[i], deconv_results.iloc[i])
+        for i in range(len(deconv_results))
+    ]
+    mae_df = pd.DataFrame({"mae": mae_values})
+    mae_df["sample_id"] = deconv_results.index
+    return mae_df

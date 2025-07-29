@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
-import anndata as ad
-import pandas as pd
 from abc import abstractmethod
 from loguru import logger
 from TAPE import Deconvolution
 from TAPE.deconvolution import ScadenDeconvolution
+from pydeconv import SignatureMatrix
+from pydeconv.model import OLS, NNLS, DWLS, RLR, NuSVR, WNNLS
+import anndata as ad
+import functools
+import pandas as pd
+import numpy as np
+import scipy.sparse
+import torch
 
-from .latent_signature_utils import create_latent_signature
-from .deconv_utils import use_nnls_method
-from .pseudobulk_dataset_utils import create_anndata_pseudobulk
-from .training_utils import (
+from benchmark_utils.latent_signature_utils import create_latent_signature
+from benchmark_utils.deconv_utils import log_scale_data, use_nnls_method
+from benchmark_utils.pseudobulk_dataset_utils import create_anndata_pseudobulk
+from benchmark_utils.training_utils import (
     fit_destvi,
     fit_scvi,
     fit_mixupvi,
@@ -33,34 +39,7 @@ class AbstractDeconvolutionMethod:
         to_deconvolve: ad.AnnData
             The data to deconvolve.
         """
-
-class NNLSMethod(AbstractDeconvolutionMethod):
-    """NNLS deconvolution method."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
-        self.signature_matrix_name = signature_matrix_name
-        self.signature_matrix = signature_matrix
-    
-    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
-        """Apply the NNLS method on data to deconvolve."""
-        if isinstance(to_deconvolve, ad.AnnData):
-            # Pseudobulks constructed from scRNAseq
-            to_deconvolve = pd.DataFrame(
-                index=to_deconvolve.obs_names,
-                columns=to_deconvolve.var_names,
-                data=to_deconvolve.layers["counts"]
-            ).T
-        elif not isinstance(to_deconvolve, pd.DataFrame):
-            message = (
-                "Data to deconvolve during inference can either be AnnData or DataFrame, "
-                f"but here it is of type {type(to_deconvolve)}."
-            )
-            logger.error(message)
-            raise ValueError(message)
-
-        deconvolution_results = use_nnls_method(to_deconvolve, self.signature_matrix)
-
-        return deconvolution_results
-    
+        
 class MixUpVIMethod(AbstractDeconvolutionMethod):
     """MixUpVI deconvolution method."""
     def __init__(
@@ -259,20 +238,53 @@ class DestVIMethod(AbstractDeconvolutionMethod):
 
         return deconvolution_results
     
+
+def _patch_torch_load():
+    """Patch torch.load to use weights_only=False by default for TAPE compatibility"""
+    original_load = torch.load
+    @functools.wraps(original_load)
+    def patched_load(*args, **kwargs):
+        if 'weights_only' not in kwargs:
+            kwargs['weights_only'] = False
+        return original_load(*args, **kwargs)
+    torch.load = patched_load
+
+_patch_torch_load()
+
 class TAPEMethod(AbstractDeconvolutionMethod):
-    """MixUpVI deconvolution method."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
+    """TAPE deconvolution method."""
+    def __init__(
+        self,
+        signature_matrix_name: str,
+        signature_matrix: pd.DataFrame,
+        cell_type_group: str,
+        adata_train: ad.AnnData = None,
+        use_signature: bool = True,
+    ):
         self.signature_matrix_name = signature_matrix_name
-        self.signature_matrix = signature_matrix
-        
-    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
+        self.use_signature = use_signature
+
+        if use_signature or adata_train is None:
+            self.training_dataset = signature_matrix
+        else:
+            # Gene filtering step
+            filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+            adata_train = adata_train[:, filtered_genes]
+            if cell_type_group not in adata_train.obs.columns:
+                raise ValueError(f"Cell type column '{cell_type_group}' not found in adata_train.obs")
+            self.training_dataset = pd.DataFrame(
+                adata_train.layers["counts"].toarray(),
+                index=adata_train.obs[cell_type_group].values,
+                columns=adata_train.var_names
+            )
+
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData | pd.DataFrame):
         """Apply the TAPE method on data to deconvolve."""
         if isinstance(to_deconvolve, ad.AnnData):
-            # Pseudobulks constructed from scRNAseq
             to_deconvolve = pd.DataFrame(
                 index=to_deconvolve.obs_names,
                 columns=to_deconvolve.var_names,
-                data=to_deconvolve.layers["counts"]
+                data=to_deconvolve.layers["counts"],
             ).T
         elif not isinstance(to_deconvolve, pd.DataFrame):
             message = (
@@ -281,32 +293,59 @@ class TAPEMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
+
         _, deconvolution_results = Deconvolution(
-            self.signature_matrix.T, to_deconvolve.T,
-            sep='\t', scaler='mms',
-            datatype='counts', genelenfile=None,
-            mode='overall', adaptive=True, variance_threshold=0.98,
+            self.training_dataset,
+            to_deconvolve.T,
+            sep="\t",
+            scaler="mms",
+            datatype="counts",
+            genelenfile=None,
+            mode="overall",
+            adaptive=True,
+            variance_threshold=0.98,
             save_model_name=None,
-            batch_size=128, epochs=128, seed=1
+            batch_size=128,
+            epochs=128,
+            seed=1,
         )
 
         return deconvolution_results
 
 class ScadenMethod(AbstractDeconvolutionMethod):
     """Apply the Scaden method on data to deconvolve."""
-    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame):
+    def __init__(
+        self,
+        signature_matrix_name: str,
+        signature_matrix: pd.DataFrame,
+        cell_type_group: str,
+        adata_train: ad.AnnData = None,
+        use_signature: bool = True,
+    ):
         self.signature_matrix_name = signature_matrix_name
-        self.signature_matrix = signature_matrix
-        
-    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
+        self.use_signature = use_signature
+
+        if use_signature or adata_train is None:
+            self.training_dataset = signature_matrix
+        else:
+            # Gene filtering step
+            filtered_genes = adata_train.var.index[adata_train.var["highly_variable"]].tolist()
+            adata_train = adata_train[:, filtered_genes]
+            if cell_type_group not in adata_train.obs.columns:
+                raise ValueError(f"Cell type column '{cell_type_group}' not found in adata_train.obs")
+            self.training_dataset = pd.DataFrame(
+                adata_train.layers["counts"].toarray(),
+                index=adata_train.obs[cell_type_group].values,
+                columns=adata_train.var_names
+            )
+
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData | pd.DataFrame):
         """Apply the Scaden method on data to deconvolve."""
         if isinstance(to_deconvolve, ad.AnnData):
-            # Pseudobulks constructed from scRNAseq
             to_deconvolve = pd.DataFrame(
                 index=to_deconvolve.obs_names,
                 columns=to_deconvolve.var_names,
-                data=to_deconvolve.layers["counts"]
+                data=to_deconvolve.layers["counts"],
             ).T
         elif not isinstance(to_deconvolve, pd.DataFrame):
             message = (
@@ -315,10 +354,124 @@ class ScadenMethod(AbstractDeconvolutionMethod):
             )
             logger.error(message)
             raise ValueError(message)
-        
-        deconvolution_results = ScadenDeconvolution(self.signature_matrix.T,
-                                            to_deconvolve.T,
-                                            sep='\t',
-                                            batch_size=128, epochs=128)
+
+        deconvolution_results = ScadenDeconvolution(
+            self.training_dataset,
+            to_deconvolve.T,
+            sep="\t",
+            batch_size=128,
+            epochs=128,
+        )
 
         return deconvolution_results
+    
+
+################ All Pydeconv methods ################
+
+class PydeconvBaseMethod(AbstractDeconvolutionMethod):
+    """Base class for pydeconv-based methods."""
+    def __init__(self, signature_matrix_name: str, signature_matrix: pd.DataFrame, use_log_scale: bool = False):
+        self.signature_matrix_name = signature_matrix_name
+        self.use_log_scale = use_log_scale
+        
+        # Apply log scaling if requested
+        if self.use_log_scale:
+            logger.debug(f"Applying log scaling to signature matrix for {signature_matrix_name}")
+            try:
+                signature_matrix = log_scale_data(signature_matrix)
+            except Exception as e:
+                logger.error(f"Error applying log scaling to signature matrix: {str(e)}")
+                raise
+            
+        # Convert pandas DataFrame to SignatureMatrix and ensure numpy array
+        try:
+            self.signature_matrix = SignatureMatrix(signature_matrix.astype(np.float64))
+        except Exception as e:
+            logger.error(f"Error converting signature matrix to SignatureMatrix: {str(e)}")
+            raise
+            
+        self.solver = None  # Will be set by child classes
+        
+    def apply_deconvolution(self, to_deconvolve: ad.AnnData|pd.DataFrame):
+        if isinstance(to_deconvolve, ad.AnnData):
+            # Ensure data is in correct format
+            if isinstance(to_deconvolve.X, np.ndarray) or scipy.sparse.issparse(to_deconvolve.X):
+                data = to_deconvolve.X
+                if self.use_log_scale:
+                    logger.debug("Applying log scaling to AnnData.X")
+                    data = log_scale_data(data)
+                to_deconvolve.X = data
+                
+            if "counts" in to_deconvolve.layers:
+                data = to_deconvolve.layers["counts"]
+                if self.use_log_scale:
+                    logger.debug("Applying log scaling to AnnData.layers['counts']")
+                    data = log_scale_data(data)
+                to_deconvolve.layers["counts"] = data
+        else:
+            # For DataFrame input, convert to AnnData
+            data = to_deconvolve.T
+            if self.use_log_scale:
+                logger.debug("Applying log scaling to DataFrame input")
+                data = log_scale_data(data)
+            adata = ad.AnnData(data)
+            adata.layers["counts"] = adata.X
+            to_deconvolve = adata
+            
+        cell_prop = self.solver.fit_transform(to_deconvolve, layer="counts", ratio=True)
+        return pd.DataFrame(cell_prop, index=to_deconvolve.obs_names, columns=self.signature_matrix.list_cell_types)
+
+
+class OLSMethod(PydeconvBaseMethod):
+    """OLS method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = OLS(self.signature_matrix)
+
+class DWLSMethod(PydeconvBaseMethod):
+    """DWLS method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = DWLS(self.signature_matrix)
+
+class NNLSMethod(PydeconvBaseMethod):
+    """NNLS method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = NNLS(self.signature_matrix)
+
+class RLRMethod(PydeconvBaseMethod):
+    """Ridge Linear Regression method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = RLR(self.signature_matrix)
+
+class NuSVRMethod(PydeconvBaseMethod):
+    """Nu-Support Vector Regression method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = NuSVR(self.signature_matrix)
+
+class WNNLSMethod(PydeconvBaseMethod):
+    """Weighted Non-Negative Least Squares method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = WNNLS(self.signature_matrix)
+
+class RLRMethod(PydeconvBaseMethod):
+    """Ridge Linear Regression method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = RLR(self.signature_matrix)
+
+class NuSVRMethod(PydeconvBaseMethod):
+    """Nu-Support Vector Regression method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = NuSVR(self.signature_matrix)
+
+class WNNLSMethod(PydeconvBaseMethod):
+    """Weighted Non-Negative Least Squares method using pydeconv implementation."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.solver = WNNLS(self.signature_matrix)
